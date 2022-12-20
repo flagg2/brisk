@@ -1,4 +1,4 @@
-import { DefaultErrorMessages } from "./DefaultErrorMessages";
+import { ErrorMessages } from "./DefaultErrorMessages";
 import { Response } from "./types";
 import { Response as ExpressResponse } from "express";
 
@@ -13,8 +13,8 @@ function respond<Message>(res: ExpressResponse, message: Message, status: number
 }
 
 export class ResponseGenerator<Message> {
-   private messages: DefaultErrorMessages<Message>;
-   constructor(defaultErrorMessages: DefaultErrorMessages<Message>) {
+   private messages: ErrorMessages<Message>;
+   constructor(defaultErrorMessages: ErrorMessages<Message>) {
       this.messages = defaultErrorMessages;
    }
    ok(res: ExpressResponse, message: Message, data: any): Response<Message> {
@@ -43,6 +43,10 @@ export class ResponseGenerator<Message> {
 
    conflict(res: ExpressResponse, message?: Message): Response<Message> {
       return respond(res, message ?? this.messages.conflict, 409);
+   }
+
+   tooManyRequests(res: ExpressResponse, message?: Message): Response<Message> {
+      return respond(res, message ?? this.messages.tooManyRequests, 429);
    }
 
    internalServerError(res: ExpressResponse, message?: Message): Response<Message> {

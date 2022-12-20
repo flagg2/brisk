@@ -1,8 +1,8 @@
 import { NextFunction, Request, Response } from "express";
-import { AllowedRouteMethods, Brisk, DefaultMessage, RouteType } from "./Brisk";
+import { AllowedRouteMethods } from "./Brisk";
 import { BriskLogger } from "./Logger";
 import { hrtime } from "process";
-import { Resolver } from "./types";
+import { MiddlewareResolver, Resolver, RouteType } from "./types";
 import { ResponseGenerator } from "./BriskResponse";
 
 function getRequestSizeKB(req: Request) {
@@ -45,6 +45,6 @@ export const Middlewares = <Message>(responseGenerator: ResponseGenerator<Messag
          };
       },
    } satisfies {
-      [path: string]: (...args: any[]) => Resolver<Message, true> | void;
+      [path: string]: (...args: any[]) => MiddlewareResolver<Message> | void;
    };
 };

@@ -1,12 +1,23 @@
 import { Request as ExpressRequest, Response as ExpressResponse, NextFunction } from "express";
 
-export type Resolver<Message, isMiddleWare = false> = isMiddleWare extends false
-   ? (req: ExpressRequest, res: ExpressResponse) => Promise<Response<Message>> | Response<Message>
-   : (
-        req: ExpressRequest,
-        res: ExpressResponse,
-        next: NextFunction
-     ) => Promise<Response<Message> | void> | Response<Message> | void;
+export type Resolver<Message> = (
+   req: ExpressRequest,
+   res: ExtendedExpressResponse<Message>,
+   next?: NextFunction
+) => Promise<Response<Message>> | Response<Message>;
+
+export type MiddlewareResolver<Message> = (
+   req: ExpressRequest,
+   res: ExtendedExpressResponse<Message>,
+   next: NextFunction
+) => Promise<Response<Message> | void> | Response<Message> | void;
+
+export type ErrorResolver<Message> = (
+   req: ExpressRequest,
+   res: ExtendedExpressResponse<Message>,
+   next: NextFunction | undefined,
+   error: Error
+) => Response<Message>;
 
 export type Response<Message> = {
    message: Message;
@@ -24,8 +35,11 @@ type ExpressResponseExtension<Message> = {
    methodNotAllowed: (message?: Message) => Response<Message>;
    internalServerError: (message?: Message) => Response<Message>;
    notImplemented: (message?: Message) => Response<Message>;
+   tooManyRequests: (message?: Message) => Response<Message>;
 };
 
 export type ExtendedExpressResponse<Message> = ExpressResponse & ExpressResponseExtension<Message>;
 
-export type ExactMatch<T, Shape> = T extends Shape ? (Exclude<keyof T, keyof Shape> extends never ? T : never) : never;
+export type AnyError = new (...args: any[]) => Error;
+
+export type RouteType = "GET" | "POST" | "PUT" | "DELETE" | "PATCH" | "OPTIONS";

@@ -1,5 +1,4 @@
 import chalk from "chalk";
-import express from "express";
 
 type LoggerConfig = {
    loggingMethods: ((message: string) => void)[];

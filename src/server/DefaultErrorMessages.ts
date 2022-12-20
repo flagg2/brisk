@@ -1,6 +1,6 @@
 import { DefaultMessage } from "./Brisk";
 
-export type DefaultErrorMessages<Message> = {
+export type ErrorMessages<Message> = {
    unauthorized: Message;
    forbidden: Message;
    notFound: Message;
@@ -8,9 +8,10 @@ export type DefaultErrorMessages<Message> = {
    conflict: Message;
    internalServerError: Message;
    notImplemented: Message;
+   tooManyRequests: Message;
 };
 
-export const defaultErrorMessages: DefaultErrorMessages<DefaultMessage> = {
+export const defaultErrorMessages: ErrorMessages<DefaultMessage> = {
    unauthorized: {
       sk: "K tomuto obsahu majú prístup iba prihlasení použivatelia s dostatočnými právami.",
       en: "Only logged in users with sufficient permissions can access this content.",
@@ -27,4 +28,8 @@ export const defaultErrorMessages: DefaultErrorMessages<DefaultMessage> = {
    },
    internalServerError: { sk: "Nastala neočakávaná chyba.", en: "An unexpected error has occurred." },
    notImplemented: { sk: "Táto funkcionalita nie je implementovaná.", en: "This feature is not implemented." },
+   tooManyRequests: {
+      sk: "Príliš veľa požiadaviek. Prosím, skúste to znova neskôr.",
+      en: "Too many requests. Please try again later.",
+   },
 };

@@ -18,6 +18,11 @@
       "fs": "^0.0.1-security",
       "helmet": "^6.0.1",
       "http": "^0.0.1-security",
-      "https": "^1.0.0"
+      "https": "^1.0.0",
+      "jsonwebtoken": "^8.5.1",
+      "zod": "^3.20.2"
+   },
+   "devDependencies": {
+      "@types/jsonwebtoken": "^8.5.9"
    }
 }

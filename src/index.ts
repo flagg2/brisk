@@ -1,32 +1,70 @@
+import { Role } from "./server/Auth";
 import { Brisk } from "./server/Brisk";
+
+//TODO: disallow duplicate requests
+
+class CustomError extends Error {
+   constructor(message: string) {
+      super(message);
+      Object.setPrototypeOf(this, CustomError.prototype);
+   }
+}
+
+const roles = {
+   admin: new Role("admin", "Admin"),
+   user: new Role("user", "User"),
+};
 
 const server = new Brisk({
    port: 8080,
-   baseErrorOverrides: null,
+   authConfig: {
+      signingSecret: "secret",
+      knownRoles: roles,
+      resolverType: "request",
+      rolesResolver(req) {
+         return [roles.admin];
+      },
+   },
 });
 
-server.get("/test", (req, res) => {
-   return server.response.ok(
-      res,
-      {
-         en: "Test",
-         sk: "Test",
-      },
-      {
-         lol: "Test data",
-      }
-   );
-});
+server.post(
+   "/test",
+   (req, res) => {
+      return res.ok(
+         {
+            en: "Test",
+            sk: "Test",
+         },
+         "data"
+      );
+   },
+   {
+      allowedRoles: [roles.user],
+   }
+);
 
 server.get("error", (req, res) => {
-   throw new Error("Test error");
+   throw new CustomError("Test error");
 });
 
-server.get("long", (req, res) => {
-   setTimeout(() => {
-      res.send("Long request");
-   }, 1000);
-});
+server.post(
+   "longRequest",
+   (req, res) => {
+      return new Promise((resolve) => {
+         setTimeout(() => {
+            resolve(
+               res.ok({
+                  en: "Test",
+                  sk: "Test",
+               })
+            );
+         }, 5000);
+      });
+   },
+   {
+      allowDuplicateRequests: true,
+   }
+);
 
 server.get("todo");
 
