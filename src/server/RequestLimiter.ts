@@ -28,7 +28,10 @@ export class DuplicateRequestFilter<Message> {
       const requestString = requestIdentity.toString();
       return !this.requests.has(requestString);
    }
-   public getMiddleware(allowDuplicateRequests: boolean = this.allowDefault) {
+   public getMiddleware(allowDuplicateRequests: boolean | null) {
+      if (allowDuplicateRequests == null) {
+         allowDuplicateRequests = this.allowDefault;
+      }
       return (req: Request, res: ExtendedExpressResponse<Message>, next: NextFunction) => {
          if (allowDuplicateRequests) {
             return next();
@@ -50,7 +53,7 @@ export class DuplicateRequestFilter<Message> {
          next();
          setTimeout(() => {
             this.requests.delete(requestIdentity.toString());
-         }, 30000);
+         }, 10000);
          res.on("finish", () => {
             this.requests.delete(requestIdentity.toString());
             console.log("finished");

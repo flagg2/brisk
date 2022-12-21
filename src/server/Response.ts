@@ -25,6 +25,10 @@ export class ResponseGenerator<Message> {
       return respond(res, message, 400);
    }
 
+   validationError(res: ExpressResponse, message: Message | undefined, error: any): Response<Message> {
+      return respond(res, message ?? this.messages.validationError, 422, error);
+   }
+
    unauthorized(res: ExpressResponse, message?: Message): Response<Message> {
       return respond(res, message ?? this.messages.unauthorized, 401);
    }

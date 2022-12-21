@@ -1,7 +1,10 @@
 import { Request as ExpressRequest, Response as ExpressResponse, NextFunction } from "express";
+import { JwtPayload } from "jsonwebtoken";
+import zod, { ZodObject } from "zod";
+import { Role } from "./Auth";
 
-export type Resolver<Message> = (
-   req: ExpressRequest,
+export type Resolver<Message, ValidationSchema extends ZodObject<any> | null, _RouteType extends RouteType> = (
+   req: ExtendedExpressRequest<ValidationSchema, _RouteType>,
    res: ExtendedExpressResponse<Message>,
    next?: NextFunction
 ) => Promise<Response<Message>> | Response<Message>;
@@ -40,6 +43,21 @@ type ExpressResponseExtension<Message> = {
 
 export type ExtendedExpressResponse<Message> = ExpressResponse & ExpressResponseExtension<Message>;
 
+type ExpressRequestExtension<ValidationSchema extends ZodObject<any> | null, _RouteType extends RouteType> = {
+   body: RouteType extends "GET" ? never : ValidationSchema extends ZodObject<any> ? zod.infer<ValidationSchema> : never;
+   query: RouteType extends "GET" ? (ValidationSchema extends ZodObject<any> ? zod.infer<ValidationSchema> : never) : never;
+};
+
+export type ExtendedExpressRequest<ValidationSchema extends ZodObject<any> | null, _RouteType extends RouteType> = Omit<
+   ExpressRequest,
+   "body" | "query"
+> &
+   ExpressRequestExtension<ValidationSchema, _RouteType>;
+
 export type AnyError = new (...args: any[]) => Error;
 
 export type RouteType = "GET" | "POST" | "PUT" | "DELETE" | "PATCH" | "OPTIONS";
+
+export type RolesResolver<AuthResolverStyle extends "token" | "request"> = AuthResolverStyle extends "token"
+   ? (decodedToken: JwtPayload) => Role[]
+   : (req: Request) => Role[];

@@ -9,6 +9,7 @@ export type ErrorMessages<Message> = {
    internalServerError: Message;
    notImplemented: Message;
    tooManyRequests: Message;
+   validationError: Message;
 };
 
 export const defaultErrorMessages: ErrorMessages<DefaultMessage> = {
@@ -31,5 +32,9 @@ export const defaultErrorMessages: ErrorMessages<DefaultMessage> = {
    tooManyRequests: {
       sk: "Príliš veľa požiadaviek. Prosím, skúste to znova neskôr.",
       en: "Too many requests. Please try again later.",
+   },
+   validationError: {
+      sk: "Táto požiadavka obsahuje neplatné údaje.",
+      en: "This request contains invalid data.",
    },
 };

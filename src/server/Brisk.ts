@@ -1,92 +1,89 @@
-import express, { Request, Response, Application, Router, NextFunction } from "express";
-import cors from "cors";
+import express, { Request, Application, Router } from "express";
 import https from "https";
 import http from "http";
 import fs from "fs";
-import { Middlewares } from "./Middlewares";
 import { BriskLogger } from "./Logger";
-import { ResponseGenerator } from "./BriskResponse";
-import { AnyError, ErrorResolver, ExtendedExpressResponse, MiddlewareResolver, Resolver, RouteType } from "./types";
-import helmet from "helmet";
+import { ResponseGenerator } from "./Response";
+import { AnyError, ErrorResolver, MiddlewareResolver, Resolver, RolesResolver, RouteType } from "./types";
 import { ErrorMessages, defaultErrorMessages } from "./DefaultErrorMessages";
 import { Auth, Role } from "./Auth";
 import { DuplicateRequestFilter } from "./RequestLimiter";
-import { ZodSchema } from "zod";
+import { ZodObject } from "zod";
+import { Wrappers } from "./Wrappers";
+import { Resolvers } from "./Resolvers";
 
-type ServerOptions<Message, KnownRoles> = {
+export type ServerOptions<
+   Message,
+   KnownRoles extends {
+      [key: string]: Role;
+   },
+   AuthResolverStyle extends "request" | "token"
+> = {
    port: number;
    host?: string;
    httpsConfig?: {
       key: string;
       cert: string;
    };
-   corsConfig?: {
-      origin: string;
-      methods: string;
-      allowedHeaders: string;
-   };
+   //TODO:
+   // corsConfig?: {
+   //    origin: string;
+   //    methods: string;
+   //    allowedHeaders: string;
+   // };
    authConfig?: {
       signingSecret: string;
-      rolesResolver: (decodedToken: any) => Role[];
+      resolverType: AuthResolverStyle;
+      rolesResolver: RolesResolver<AuthResolverStyle>;
       knownRoles: KnownRoles;
    };
    loggingMethods?: ((message: string) => void)[];
    errorMessageOverrides?: ErrorMessages<Message>;
    customCatchers?: Map<AnyError, ErrorResolver<Message>>;
    useHelmet?: boolean;
-   useDuplicateRequestFilter?: boolean;
+   allowDuplicateRequests?: boolean;
 };
 
 export type AllowedRouteMethods = {
    [path: string]: RouteType[];
 };
 
-type RequestOptions<Message> = {
+type RequestOptions<
+   Message,
+   ValidationSchema extends ZodObject<any> | null,
+   KnownRoles extends {
+      [key: string]: Role;
+   }
+> = {
    middlewares?: MiddlewareResolver<Message>[];
-   allowedRoles?: Role[];
+   allowedRoles?: KnownRoles[keyof KnownRoles][];
    allowDuplicateRequests?: boolean;
+   dataSchema?: ValidationSchema;
 };
 
 export type DefaultMessage = { sk: string; en: string };
 
-export class Brisk<Message = DefaultMessage, KnownRoles = never, AuthResolverStyle extends "request" | "token" = "token"> {
+export class Brisk<
+   Message = DefaultMessage,
+   KnownRoles extends {
+      [key: string]: Role;
+   } = never,
+   AuthResolverStyle extends "request" | "token" = "token"
+> {
    public app: Application;
    public router: Router;
    public roles: KnownRoles;
    private response: ResponseGenerator<Message>;
-   private options: ServerOptions<Message, KnownRoles>;
+   private options: ServerOptions<Message, KnownRoles, AuthResolverStyle>;
    private allowedMethods: AllowedRouteMethods = {};
-   private middlewares: ReturnType<typeof Middlewares>;
+   private resolvers: Resolvers<Message, KnownRoles, AuthResolverStyle>;
+   private wrappers: Wrappers<Message>;
    private logger: BriskLogger;
    private auth: Auth<Message, AuthResolverStyle> | null = null;
    private duplicateRequestFilter: DuplicateRequestFilter<Message>;
 
-   constructor(options: {
-      port: number;
-      host?: string;
-      httpsConfig?: {
-         key: string;
-         cert: string;
-      };
-      corsConfig?: {
-         origin: string;
-         methods: string;
-         allowedHeaders: string;
-      };
-      authConfig?: {
-         signingSecret: string;
-         resolverType?: AuthResolverStyle;
-         rolesResolver: AuthResolverStyle extends "token" ? (decodedToken: any) => Role[] : (req: Request) => Role[];
-         knownRoles: KnownRoles;
-      };
-      loggingMethods?: ((message: string) => void)[];
-      errorMessageOverrides?: {
-         [key in keyof ErrorMessages<Message>]: ErrorMessages<Message>[key];
-      };
-      customCatchers?: Map<AnyError, ErrorResolver<Message>>;
-      useHelmet?: boolean;
-      allowDuplicateRequests?: boolean;
-   }) {
+   //TODO: wrap this in a type
+   constructor(options: ServerOptions<Message, KnownRoles, AuthResolverStyle>) {
       this.options = options;
       this.allowedMethods = {};
       this.roles = options.authConfig?.knownRoles ?? ({} as KnownRoles);
@@ -100,22 +97,25 @@ export class Brisk<Message = DefaultMessage, KnownRoles = never, AuthResolverSty
       this.response = new ResponseGenerator<Message>(
          options.errorMessageOverrides ?? (defaultErrorMessages as ErrorMessages<Message>)
       );
-      this.middlewares = Middlewares<Message>(this.response);
-
-      this.app.use(this.middlewares.logRequest(this.logger));
-      if (options.useHelmet !== false) {
-         this.app.use(helmet());
-      }
-      this.app.use(express.json());
-      this.app.use(express.urlencoded({ extended: true }));
-      this.app.use(cors());
-
-      if (options.authConfig) {
-         const { signingSecret, rolesResolver, resolverType: resolverStyle } = options.authConfig;
-         this.auth = new Auth<Message, AuthResolverStyle>(signingSecret, rolesResolver, options.authConfig.resolverType);
-      }
 
       this.duplicateRequestFilter = new DuplicateRequestFilter<Message>(options.allowDuplicateRequests);
+      if (options.authConfig) {
+         const { signingSecret, rolesResolver, resolverType } = options.authConfig;
+         this.auth = new Auth<Message, AuthResolverStyle>(signingSecret, rolesResolver, resolverType);
+      }
+
+      this.wrappers = new Wrappers<Message>(this.response, options.customCatchers);
+      this.resolvers = new Resolvers<Message, KnownRoles, AuthResolverStyle>(
+         this.options,
+         this.logger,
+         this.response,
+         this.duplicateRequestFilter,
+         this.auth
+      );
+
+      for (const resolver of this.resolvers.getServerCreationMiddlewares()) {
+         this.app.use(resolver);
+      }
 
       this.app.use("/", this.router);
 
@@ -140,6 +140,7 @@ export class Brisk<Message = DefaultMessage, KnownRoles = never, AuthResolverSty
    public start() {
       const { port, httpsConfig } = this.options;
       const startUpMessage = `🚀 Server up and running on port ${port} 🚀`;
+
       if (httpsConfig) {
          const { key, cert } = httpsConfig;
          const httpsServer = https.createServer(
@@ -158,46 +159,40 @@ export class Brisk<Message = DefaultMessage, KnownRoles = never, AuthResolverSty
             console.log(startUpMessage);
          });
       }
-      this.router.use(this.middlewares.validateRouteAndMethod(this.allowedMethods));
+
+      for (const resolver of this.resolvers.getServerStartUpMiddlewares(this.allowedMethods)) {
+         this.app.use(resolver);
+      }
    }
 
-   public addRoute(config: { type: RouteType; path: string; resolver?: Resolver<Message>; opts?: RequestOptions<Message> }) {
+   //public follow middleware pattern as in constructor
+   public addRoute<_RouteType extends RouteType, ValidationSchema extends ZodObject<any> | null = null>(config: {
+      type: _RouteType;
+      path: string;
+      resolver?: Resolver<Message, ValidationSchema, _RouteType>;
+      opts?: RequestOptions<Message, ValidationSchema, KnownRoles>;
+   }) {
       let { type, path, resolver, opts } = config;
-      const { middlewares, allowedRoles, allowDuplicateRequests } = opts ?? {};
+      const { middlewares, allowedRoles, allowDuplicateRequests, dataSchema: requestSchema } = opts ?? {};
 
-      const router = this.router;
+      path = this.prependSlash(path);
+      this.addToAllowedMethods(path, type);
 
-      let middlewareResolvers = middlewares ?? [];
+      let generatedMiddlewares = this.resolvers.getRouteMiddlewares(
+         allowedRoles ?? null,
+         allowDuplicateRequests ?? null,
+         requestSchema ?? null
+      );
+      let finalResolvers = this.wrappers.wrapRoute([...generatedMiddlewares, ...(middlewares ?? [])]);
 
-      if (this.auth != null && allowedRoles != null) {
-         const authMiddleware = this.auth.getMiddleware(allowedRoles);
-         middlewareResolvers.unshift(authMiddleware);
-      }
-
-      const duplicateRequestMiddleware = this.duplicateRequestFilter.getMiddleware(allowDuplicateRequests);
-      middlewareResolvers.unshift(duplicateRequestMiddleware);
-
-      if (!path.startsWith("/")) {
-         path = "/" + path;
-      }
-
-      if (this.allowedMethods[path] != null) {
-         this.allowedMethods[path].push(type);
-      } else {
-         this.allowedMethods[path] = [type];
-      }
-
-      let concatenatedResolvers = [...middlewareResolvers, resolver ?? this.notImplemented()];
-      concatenatedResolvers[0] = this.attachResponseMethods(concatenatedResolvers[0]);
-
-      concatenatedResolvers = concatenatedResolvers.map((resolverWithoutErrorCatching) => {
-         return this.catchErrors(resolverWithoutErrorCatching, this.options.customCatchers);
-      });
-
-      router[type.toLowerCase()](path, concatenatedResolvers);
+      this.router[type.toLowerCase()](path, [...finalResolvers, resolver ?? this.resolvers.static.notImplemented]);
    }
 
-   public get(path: string, resolver?: Resolver<Message>, opts?: RequestOptions<Message>) {
+   public get<ValidationSchema extends ZodObject<any> | null = null>(
+      path: string,
+      resolver?: Resolver<Message, ValidationSchema, "GET">,
+      opts?: RequestOptions<Message, ValidationSchema, KnownRoles>
+   ) {
       this.addRoute({
          type: "GET",
          path,
@@ -206,7 +201,11 @@ export class Brisk<Message = DefaultMessage, KnownRoles = never, AuthResolverSty
       });
    }
 
-   public post(path: string, resolver?: Resolver<Message>, opts?: RequestOptions<Message>) {
+   public post<ValidationSchema extends ZodObject<any> | null = null>(
+      path: string,
+      resolver?: Resolver<Message, ValidationSchema, "POST">,
+      opts?: RequestOptions<Message, ValidationSchema, KnownRoles>
+   ) {
       this.addRoute({
          type: "POST",
          path,
@@ -215,7 +214,11 @@ export class Brisk<Message = DefaultMessage, KnownRoles = never, AuthResolverSty
       });
    }
 
-   public put(path: string, resolver?: Resolver<Message>, opts?: RequestOptions<Message>) {
+   public put<ValidationSchema extends ZodObject<any> | null = null>(
+      path: string,
+      resolver?: Resolver<Message, ValidationSchema, "PUT">,
+      opts?: RequestOptions<Message, ValidationSchema, KnownRoles>
+   ) {
       this.addRoute({
          type: "PUT",
          path,
@@ -224,7 +227,11 @@ export class Brisk<Message = DefaultMessage, KnownRoles = never, AuthResolverSty
       });
    }
 
-   public delete(path: string, resolver?: Resolver<Message>, opts?: RequestOptions<Message>) {
+   public delete<ValidationSchema extends ZodObject<any> | null = null>(
+      path: string,
+      resolver?: Resolver<Message, ValidationSchema, "DELETE">,
+      opts?: RequestOptions<Message, ValidationSchema, KnownRoles>
+   ) {
       this.addRoute({
          type: "DELETE",
          path,
@@ -246,57 +253,18 @@ export class Brisk<Message = DefaultMessage, KnownRoles = never, AuthResolverSty
       return port;
    }
 
-   private notImplemented(): Resolver<Message> {
-      return (_: Request, res: Response) => {
-         return this.response.notImplemented(res);
-      };
+   private addToAllowedMethods(path: string, type: RouteType) {
+      if (this.allowedMethods[path] != null) {
+         this.allowedMethods[path].push(type);
+      } else {
+         this.allowedMethods[path] = [type];
+      }
    }
 
-   private catchErrors(fn: MiddlewareResolver<Message>, customCatchers?: Map<AnyError, ErrorResolver<Message>>) {
-      return async (req: Request, res: ExtendedExpressResponse<Message>, next: NextFunction) => {
-         try {
-            return await fn(req, res, next);
-         } catch (err: any) {
-            const catcher = customCatchers?.get(err.constructor);
-            if (catcher != null) {
-               return catcher(req, res, next, err);
-            }
-            console.error(err);
-            return this.response.internalServerError(res);
-         }
-      };
-   }
-
-   private attachResponseMethods(fn: MiddlewareResolver<Message>): MiddlewareResolver<Message> {
-      return (req: Request, res: ExtendedExpressResponse<Message>, next: NextFunction) => {
-         res.ok = (message: Message, data?: any) => {
-            return this.response.ok(res, message, data);
-         };
-         res.badRequest = (message: Message) => {
-            return this.response.badRequest(res, message);
-         };
-         res.unauthorized = (message?: Message) => {
-            return this.response.unauthorized(res, message);
-         };
-         res.forbidden = (message?: Message) => {
-            return this.response.forbidden(res, message);
-         };
-         res.notFound = (message?: Message) => {
-            return this.response.notFound(res, message);
-         };
-         res.conflict = (message?: Message) => {
-            return this.response.conflict(res, message);
-         };
-         res.internalServerError = (message?: Message) => {
-            return this.response.internalServerError(res, message);
-         };
-         res.notImplemented = (message?: Message) => {
-            return this.response.notImplemented(res, message);
-         };
-         res.tooManyRequests = (message?: Message) => {
-            return this.response.tooManyRequests(res, message);
-         };
-         return fn(req, res, next);
-      };
+   private prependSlash(path: string) {
+      if (!path.startsWith("/")) {
+         path = "/" + path;
+      }
+      return path;
    }
 }
