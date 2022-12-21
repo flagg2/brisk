@@ -2,7 +2,7 @@ import { NextFunction, Request, Response } from "express";
 import { AllowedRouteMethods, ServerOptions } from "./Brisk";
 import { BriskLogger } from "./Logger";
 import { hrtime } from "process";
-import { MiddlewareResolver, RouteType } from "./types";
+import { ExtendedExpressResponse, MiddlewareResolver, RouteType } from "./types";
 import { ResponseGenerator } from "./Response";
 import helmet from "helmet";
 import { ZodObject } from "zod";
@@ -76,14 +76,10 @@ export class Resolvers<
    };
 
    public getServerCreationMiddlewares = () => {
-      const middlewares: express.RequestHandler[] = [];
-      middlewares.push(this.static.logRequest);
+      const middlewares = [this.static.logRequest, this.static.json, this.static.urlencoded, this.static.cors];
       if (this.options.useHelmet) {
          middlewares.push(this.static.helmet);
       }
-      middlewares.push(this.static.json);
-      middlewares.push(this.static.urlencoded);
-      middlewares.push(this.static.cors);
       return middlewares;
    };
 
@@ -98,10 +94,11 @@ export class Resolvers<
       allowDuplicateRequests: boolean | null,
       schema: ZodObject<any> | null
    ) => {
-      const middlewares: MiddlewareResolver<Message>[] = [];
-      middlewares.push(this.dynamic.authenticate(allowedRoles));
-      middlewares.push(this.dynamic.filterDuplicateRequests(allowDuplicateRequests));
-      middlewares.push(this.dynamic.validateSchema(schema));
+      const middlewares: MiddlewareResolver<Message>[] = [
+         this.dynamic.authenticate(allowedRoles),
+         this.dynamic.filterDuplicateRequests(allowDuplicateRequests),
+         this.dynamic.validateSchema(schema),
+      ];
       return middlewares;
    };
 

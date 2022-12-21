@@ -45,7 +45,7 @@ export class Auth<Message, AuthResolverStyle extends "request" | "token"> {
             }
          }
 
-         //@ts-expect-error
+         //@ts-ignore
          const roles = this.rolesResolver(decodedToken ?? req);
          if (!roles.some((role) => allowedRoles.includes(role))) {
             return res.forbidden();

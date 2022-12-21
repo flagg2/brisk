@@ -10,7 +10,7 @@ export class Wrappers<Message> {
       this.customCatchers = customCatchers;
    }
 
-   public catchErrors(fn: MiddlewareResolver<Message>) {
+   private catchErrors(fn: MiddlewareResolver<Message>) {
       return async (req: ExpressRequest, res: ExtendedExpressResponse<Message>, next: NextFunction) => {
          try {
             return await fn(req, res, next);
@@ -25,7 +25,7 @@ export class Wrappers<Message> {
       };
    }
 
-   public attachResponseMethods(fn: MiddlewareResolver<Message>): MiddlewareResolver<Message> {
+   private attachResponseMethods(fn: MiddlewareResolver<Message>): MiddlewareResolver<Message> {
       return (req: ExpressRequest, res: ExtendedExpressResponse<Message>, next: NextFunction) => {
          res.ok = (message: Message, data?: any) => {
             return this.responseGenerator.ok(res, message, data);

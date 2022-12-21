@@ -82,7 +82,6 @@ export class Brisk<
    private auth: Auth<Message, AuthResolverStyle> | null = null;
    private duplicateRequestFilter: DuplicateRequestFilter<Message>;
 
-   //TODO: wrap this in a type
    constructor(options: ServerOptions<Message, KnownRoles, AuthResolverStyle>) {
       this.options = options;
       this.allowedMethods = {};
@@ -118,23 +117,6 @@ export class Brisk<
       }
 
       this.app.use("/", this.router);
-
-      // Has to be done like this because of inconsistency in express typings
-      // TODO: improve and make it work
-      // this.app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
-      //    if (err instanceof SyntaxError && "body" in err) {
-      //       console.error(err);
-      //       res.status(400).send({
-      //          message: "Syntax of provided body is invalid",
-      //          messageSK: "Invalídny json syntax",
-      //          error: "invalid-syntax",
-      //       });
-      //       return;
-      //    }
-      //    next();
-      // });
-
-      //TODO: doesnt work
    }
 
    public start() {
