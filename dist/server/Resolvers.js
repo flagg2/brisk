@@ -62,25 +62,24 @@ class Resolvers {
             middlewares.push(this.dynamic.validateRouteAndMethod(allowedMethods));
             return middlewares;
         };
-        this.getRouteMiddlewares = (allowedRoles, allowDuplicateRequests, schema) => {
-            const middlewares = [
-                this.dynamic.authenticate(allowedRoles),
-                this.dynamic.filterDuplicateRequests(allowDuplicateRequests),
-                this.dynamic.validateSchema(schema),
-            ];
-            return middlewares;
-        };
         this.dynamic = {
-            validateSchema: (schema) => (req, res, next) => {
-                if (schema == null) {
+            validateSchema: (validation) => (req, res, next) => {
+                if (validation == null) {
                     return next();
+                }
+                const { schema, isStrict } = validation;
+                function maybeStrictSchema() {
+                    if (isStrict !== false) {
+                        return schema.strict();
+                    }
+                    return schema;
                 }
                 try {
                     if (req.method === "GET") {
-                        req.query = schema.strict().parse(req.query);
+                        req.query = maybeStrictSchema().parse(req.query);
                     }
                     else {
-                        req.body = schema.strict().parse(req.body);
+                        req.body = maybeStrictSchema().parse(req.body);
                     }
                     next();
                 }
@@ -110,6 +109,14 @@ class Resolvers {
         this.response = response;
         this.duplicateRequestFilter = duplicateRequestFilter;
         this.auth = auth;
+    }
+    getRouteMiddlewares(allowedRoles, allowDuplicateRequests, validation) {
+        const middlewares = [
+            this.dynamic.authenticate(allowedRoles),
+            this.dynamic.filterDuplicateRequests(allowDuplicateRequests),
+            this.dynamic.validateSchema(validation),
+        ];
+        return middlewares;
     }
 }
 exports.Resolvers = Resolvers;

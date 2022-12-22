@@ -111,7 +111,7 @@ export class Resolvers<
 
             const { schema, isStrict } = validation;
             function maybeStrictSchema() {
-               if (isStrict) {
+               if (isStrict !== false) {
                   return schema.strict();
                }
                return schema;

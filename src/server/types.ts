@@ -44,8 +44,8 @@ type ExpressResponseExtension<Message> = {
 export type ExtendedExpressResponse<Message> = ExpressResponse & ExpressResponseExtension<Message>;
 
 type ExpressRequestExtension<ValidationSchema extends ZodObject<any> | null, _RouteType extends RouteType> = {
-   body: RouteType extends "GET" ? never : ValidationSchema extends ZodObject<any> ? zod.infer<ValidationSchema> : never;
-   query: RouteType extends "GET" ? (ValidationSchema extends ZodObject<any> ? zod.infer<ValidationSchema> : never) : never;
+   body: _RouteType extends "GET" ? never : ValidationSchema extends ZodObject<any> ? zod.infer<ValidationSchema> : never;
+   query: _RouteType extends "GET" ? (ValidationSchema extends ZodObject<any> ? zod.infer<ValidationSchema> : never) : never;
 };
 
 export type ExtendedExpressRequest<ValidationSchema extends ZodObject<any> | null, _RouteType extends RouteType> = Omit<
@@ -64,5 +64,5 @@ export type RolesResolver<AuthResolverStyle extends "token" | "request"> = AuthR
 
 export type ValidationOptions<ValidationSchema extends zod.ZodObject<any>> = {
    schema: ValidationSchema;
-   isStrict: boolean;
+   isStrict?: boolean;
 };
