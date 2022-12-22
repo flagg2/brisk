@@ -61,7 +61,7 @@ type RequestOptions<
    validation?: ValidationOptions<ValidationSchema>;
 };
 
-export type DefaultMessage = { sk: string; en: string };
+export type DefaultMessage = string;
 
 export class Brisk<
    Message = DefaultMessage,
