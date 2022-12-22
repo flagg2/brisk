@@ -61,3 +61,8 @@ export type RouteType = "GET" | "POST" | "PUT" | "DELETE" | "PATCH" | "OPTIONS";
 export type RolesResolver<AuthResolverStyle extends "token" | "request"> = AuthResolverStyle extends "token"
    ? (decodedToken: JwtPayload) => Role[]
    : (req: Request) => Role[];
+
+export type ValidationOptions<ValidationSchema extends zod.ZodObject<any>> = {
+   schema: ValidationSchema;
+   isStrict: boolean;
+};

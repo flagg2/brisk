@@ -4,7 +4,7 @@ import http from "http";
 import fs from "fs";
 import { BriskLogger } from "./Logger";
 import { ResponseGenerator } from "./Response";
-import { AnyError, ErrorResolver, MiddlewareResolver, Resolver, RolesResolver, RouteType } from "./types";
+import { AnyError, ErrorResolver, MiddlewareResolver, Resolver, RolesResolver, RouteType, ValidationOptions } from "./types";
 import { ErrorMessages, defaultErrorMessages } from "./DefaultErrorMessages";
 import { Auth, Role } from "./Auth";
 import { DuplicateRequestFilter } from "./RequestLimiter";
@@ -50,7 +50,7 @@ export type AllowedRouteMethods = {
 
 type RequestOptions<
    Message,
-   ValidationSchema extends ZodObject<any> | null,
+   ValidationSchema extends ZodObject<any>,
    KnownRoles extends {
       [key: string]: Role;
    }
@@ -58,7 +58,7 @@ type RequestOptions<
    middlewares?: MiddlewareResolver<Message>[];
    allowedRoles?: KnownRoles[keyof KnownRoles][];
    allowDuplicateRequests?: boolean;
-   dataSchema?: ValidationSchema;
+   validation?: ValidationOptions<ValidationSchema>;
 };
 
 export type DefaultMessage = { sk: string; en: string };
@@ -148,14 +148,14 @@ export class Brisk<
    }
 
    //public follow middleware pattern as in constructor
-   public addRoute<_RouteType extends RouteType, ValidationSchema extends ZodObject<any> | null = null>(config: {
+   public addRoute<_RouteType extends RouteType, ValidationSchema extends ZodObject<any>>(config: {
       type: _RouteType;
       path: string;
       resolver?: Resolver<Message, ValidationSchema, _RouteType>;
       opts?: RequestOptions<Message, ValidationSchema, KnownRoles>;
    }) {
       let { type, path, resolver, opts } = config;
-      const { middlewares, allowedRoles, allowDuplicateRequests, dataSchema: requestSchema } = opts ?? {};
+      const { middlewares, allowedRoles, allowDuplicateRequests, validation } = opts ?? {};
 
       path = this.prependSlash(path);
       this.addToAllowedMethods(path, type);
@@ -163,14 +163,14 @@ export class Brisk<
       let generatedMiddlewares = this.resolvers.getRouteMiddlewares(
          allowedRoles ?? null,
          allowDuplicateRequests ?? null,
-         requestSchema ?? null
+         validation ?? null
       );
       let finalResolvers = this.wrappers.wrapRoute([...generatedMiddlewares, ...(middlewares ?? [])]);
 
       this.router[type.toLowerCase()](path, [...finalResolvers, resolver ?? this.resolvers.static.notImplemented]);
    }
 
-   public get<ValidationSchema extends ZodObject<any> | null = null>(
+   public get<ValidationSchema extends ZodObject<any>>(
       path: string,
       resolver?: Resolver<Message, ValidationSchema, "GET">,
       opts?: RequestOptions<Message, ValidationSchema, KnownRoles>
@@ -183,7 +183,7 @@ export class Brisk<
       });
    }
 
-   public post<ValidationSchema extends ZodObject<any> | null = null>(
+   public post<ValidationSchema extends ZodObject<any>>(
       path: string,
       resolver?: Resolver<Message, ValidationSchema, "POST">,
       opts?: RequestOptions<Message, ValidationSchema, KnownRoles>
@@ -196,7 +196,7 @@ export class Brisk<
       });
    }
 
-   public put<ValidationSchema extends ZodObject<any> | null = null>(
+   public put<ValidationSchema extends ZodObject<any>>(
       path: string,
       resolver?: Resolver<Message, ValidationSchema, "PUT">,
       opts?: RequestOptions<Message, ValidationSchema, KnownRoles>
@@ -209,7 +209,7 @@ export class Brisk<
       });
    }
 
-   public delete<ValidationSchema extends ZodObject<any> | null = null>(
+   public delete<ValidationSchema extends ZodObject<any>>(
       path: string,
       resolver?: Resolver<Message, ValidationSchema, "DELETE">,
       opts?: RequestOptions<Message, ValidationSchema, KnownRoles>
