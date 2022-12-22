@@ -165,9 +165,13 @@ export class Brisk<
          allowDuplicateRequests ?? null,
          validation ?? null
       );
-      let finalResolvers = this.wrappers.wrapRoute([...generatedMiddlewares, ...(middlewares ?? [])]);
+      let finalResolvers = this.wrappers.wrapRoute([
+         ...generatedMiddlewares,
+         ...(middlewares ?? []),
+         resolver ?? this.resolvers.static.notImplemented,
+      ]);
 
-      this.router[type.toLowerCase()](path, [...finalResolvers, resolver ?? this.resolvers.static.notImplemented]);
+      this.router[type.toLowerCase()](path, finalResolvers);
    }
 
    public get<ValidationSchema extends ZodObject<any>>(

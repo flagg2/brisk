@@ -1,6 +1,6 @@
 import { NextFunction, Request as ExpressRequest } from "express";
 import { ResponseGenerator } from "./Response";
-import { AnyError, ErrorResolver, ExtendedExpressResponse, MiddlewareResolver } from "./types";
+import { AnyError, ErrorResolver, ExtendedExpressResponse, MiddlewareResolver, Resolver } from "./types";
 
 export class Wrappers<Message> {
    private responseGenerator: ResponseGenerator<Message>;
@@ -58,8 +58,10 @@ export class Wrappers<Message> {
       };
    }
 
-   public wrapRoute(resolvers: MiddlewareResolver<Message>[]) {
+   public wrapRoute(resolvers: (MiddlewareResolver<Message> | Resolver<Message, any, any>)[]) {
+      console.log("Wrapping route");
       resolvers[0] = this.attachResponseMethods(resolvers[0]);
-      return resolvers.map((resolver) => this.catchErrors(resolver));
+      resolvers = resolvers.map((resolver) => this.catchErrors(resolver));
+      return resolvers;
    }
 }

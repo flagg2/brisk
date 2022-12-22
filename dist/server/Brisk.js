@@ -71,8 +71,12 @@ class Brisk {
         path = this.prependSlash(path);
         this.addToAllowedMethods(path, type);
         let generatedMiddlewares = this.resolvers.getRouteMiddlewares(allowedRoles !== null && allowedRoles !== void 0 ? allowedRoles : null, allowDuplicateRequests !== null && allowDuplicateRequests !== void 0 ? allowDuplicateRequests : null, validation !== null && validation !== void 0 ? validation : null);
-        let finalResolvers = this.wrappers.wrapRoute([...generatedMiddlewares, ...(middlewares !== null && middlewares !== void 0 ? middlewares : [])]);
-        this.router[type.toLowerCase()](path, [...finalResolvers, resolver !== null && resolver !== void 0 ? resolver : this.resolvers.static.notImplemented]);
+        let finalResolvers = this.wrappers.wrapRoute([
+            ...generatedMiddlewares,
+            ...(middlewares !== null && middlewares !== void 0 ? middlewares : []),
+            resolver !== null && resolver !== void 0 ? resolver : this.resolvers.static.notImplemented,
+        ]);
+        this.router[type.toLowerCase()](path, finalResolvers);
     }
     get(path, resolver, opts) {
         this.addRoute({
