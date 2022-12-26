@@ -15,6 +15,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.Resolvers = void 0;
 const process_1 = require("process");
 const helmet_1 = __importDefault(require("helmet"));
+const zod_1 = require("zod");
 const express_1 = __importDefault(require("express"));
 const cors_1 = __importDefault(require("cors"));
 function getRequestSizeKB(req) {
@@ -69,7 +70,7 @@ class Resolvers {
                 }
                 const { schema, isStrict } = validation;
                 function maybeStrictSchema() {
-                    if (isStrict !== false) {
+                    if (isStrict !== false && schema instanceof zod_1.ZodObject) {
                         return schema.strict();
                     }
                     return schema;
