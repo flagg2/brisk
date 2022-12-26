@@ -5,7 +5,7 @@ import { hrtime } from "process";
 import { ExtendedExpressResponse, MiddlewareResolver, RouteType, ValidationOptions } from "./types";
 import { ResponseGenerator } from "./Response";
 import helmet from "helmet";
-import { ZodAny, ZodObject } from "zod";
+import { ZodSchema, ZodObject } from "zod";
 import express from "express";
 import cors from "cors";
 import { Auth, Role } from "./Auth";
@@ -92,7 +92,7 @@ export class Resolvers<
    public getRouteMiddlewares(
       allowedRoles: KnownRoles[keyof KnownRoles][] | null,
       allowDuplicateRequests: boolean | null,
-      validation: ValidationOptions<ZodAny> | null
+      validation: ValidationOptions<ZodSchema<any>> | null
    ) {
       const middlewares: MiddlewareResolver<Message>[] = [
          this.dynamic.authenticate(allowedRoles),
@@ -103,30 +103,31 @@ export class Resolvers<
    }
 
    dynamic = {
-      validateSchema: (validation: ValidationOptions<ZodAny> | null) => (req: Request, res: Response, next: NextFunction) => {
-         if (validation == null) {
-            return next();
-         }
-
-         const { schema, isStrict } = validation;
-         function maybeStrictSchema() {
-            if (isStrict !== false && schema instanceof ZodObject) {
-               return schema.strict();
+      validateSchema:
+         (validation: ValidationOptions<ZodSchema<any>> | null) => (req: Request, res: Response, next: NextFunction) => {
+            if (validation == null) {
+               return next();
             }
-            return schema;
-         }
 
-         try {
-            if (req.method === "GET") {
-               req.query = maybeStrictSchema().parse(req.query);
-            } else {
-               req.body = maybeStrictSchema().parse(req.body);
+            const { schema, isStrict } = validation;
+            function maybeStrictSchema() {
+               if (isStrict !== false && schema instanceof ZodObject) {
+                  return schema.strict();
+               }
+               return schema;
             }
-            next();
-         } catch (error: any) {
-            this.response.validationError(res, undefined, error);
-         }
-      },
+
+            try {
+               if (req.method === "GET") {
+                  req.query = maybeStrictSchema().parse(req.query);
+               } else {
+                  req.body = maybeStrictSchema().parse(req.body);
+               }
+               next();
+            } catch (error: any) {
+               this.response.validationError(res, undefined, error);
+            }
+         },
       validateRouteAndMethod: (allowedMethods: AllowedRouteMethods) => (req: Request, res: Response, next: NextFunction) => {
          if (allowedMethods[req.path] == null) {
             return this.response.notFound(res);

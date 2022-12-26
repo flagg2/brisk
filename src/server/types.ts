@@ -1,9 +1,9 @@
 import { Request as ExpressRequest, Response as ExpressResponse, NextFunction } from "express";
 import { JwtPayload } from "jsonwebtoken";
-import zod, { ZodAny, ZodObject } from "zod";
+import zod, { ZodSchema, ZodObject } from "zod";
 import { Role } from "./Auth";
 
-export type Resolver<Message, ValidationSchema extends ZodAny | null, _RouteType extends RouteType> = (
+export type Resolver<Message, ValidationSchema extends ZodSchema<any> | null, _RouteType extends RouteType> = (
    req: ExtendedExpressRequest<ValidationSchema, _RouteType>,
    res: ExtendedExpressResponse<Message>,
    next?: NextFunction
@@ -43,12 +43,12 @@ type ExpressResponseExtension<Message> = {
 
 export type ExtendedExpressResponse<Message> = ExpressResponse & ExpressResponseExtension<Message>;
 
-type ExpressRequestExtension<ValidationSchema extends ZodAny | null, _RouteType extends RouteType> = {
-   body: _RouteType extends "GET" ? never : ValidationSchema extends ZodAny ? zod.infer<ValidationSchema> : never;
-   query: _RouteType extends "GET" ? (ValidationSchema extends ZodAny ? zod.infer<ValidationSchema> : never) : never;
+type ExpressRequestExtension<ValidationSchema extends ZodSchema<any> | null, _RouteType extends RouteType> = {
+   body: _RouteType extends "GET" ? never : ValidationSchema extends ZodSchema<any> ? zod.infer<ValidationSchema> : never;
+   query: _RouteType extends "GET" ? (ValidationSchema extends ZodSchema<any> ? zod.infer<ValidationSchema> : never) : never;
 };
 
-export type ExtendedExpressRequest<ValidationSchema extends ZodAny | null, _RouteType extends RouteType> = Omit<
+export type ExtendedExpressRequest<ValidationSchema extends ZodSchema<any> | null, _RouteType extends RouteType> = Omit<
    ExpressRequest,
    "body" | "query"
 > &
@@ -62,7 +62,7 @@ export type RolesResolver<AuthResolverStyle extends "token" | "request"> = AuthR
    ? (decodedToken: JwtPayload) => Role[]
    : (req: Request) => Role[];
 
-export type ValidationOptions<ValidationSchema extends ZodAny> = {
+export type ValidationOptions<ValidationSchema extends ZodSchema<any>> = {
    schema: ValidationSchema;
    isStrict?: boolean;
 };

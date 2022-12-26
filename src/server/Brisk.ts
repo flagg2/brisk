@@ -8,7 +8,7 @@ import { AnyError, ErrorResolver, MiddlewareResolver, Resolver, RolesResolver, R
 import { ErrorMessages, defaultErrorMessages } from "./DefaultErrorMessages";
 import { Auth, Role } from "./Auth";
 import { DuplicateRequestFilter } from "./RequestLimiter";
-import { ZodAny } from "zod";
+import { ZodSchema } from "zod";
 import { Wrappers } from "./Wrappers";
 import { Resolvers } from "./Resolvers";
 
@@ -50,7 +50,7 @@ export type AllowedRouteMethods = {
 
 type RequestOptions<
    Message,
-   ValidationSchema extends ZodAny,
+   ValidationSchema extends ZodSchema<any>,
    KnownRoles extends {
       [key: string]: Role;
    }
@@ -148,7 +148,7 @@ export class Brisk<
    }
 
    //public follow middleware pattern as in constructor
-   public addRoute<_RouteType extends RouteType, ValidationSchema extends ZodAny>(config: {
+   public addRoute<_RouteType extends RouteType, ValidationSchema extends ZodSchema<any>>(config: {
       type: _RouteType;
       path: string;
       resolver?: Resolver<Message, ValidationSchema, _RouteType>;
@@ -174,7 +174,7 @@ export class Brisk<
       this.router[type.toLowerCase()](path, finalResolvers);
    }
 
-   public get<ValidationSchema extends ZodAny>(
+   public get<ValidationSchema extends ZodSchema<any>>(
       path: string,
       resolver?: Resolver<Message, ValidationSchema, "GET">,
       opts?: RequestOptions<Message, ValidationSchema, KnownRoles>
@@ -187,7 +187,7 @@ export class Brisk<
       });
    }
 
-   public post<ValidationSchema extends ZodAny>(
+   public post<ValidationSchema extends ZodSchema<any>>(
       path: string,
       resolver?: Resolver<Message, ValidationSchema, "POST">,
       opts?: RequestOptions<Message, ValidationSchema, KnownRoles>
@@ -200,7 +200,7 @@ export class Brisk<
       });
    }
 
-   public put<ValidationSchema extends ZodAny>(
+   public put<ValidationSchema extends ZodSchema<any>>(
       path: string,
       resolver?: Resolver<Message, ValidationSchema, "PUT">,
       opts?: RequestOptions<Message, ValidationSchema, KnownRoles>
@@ -213,7 +213,7 @@ export class Brisk<
       });
    }
 
-   public delete<ValidationSchema extends ZodAny>(
+   public delete<ValidationSchema extends ZodSchema<any>>(
       path: string,
       resolver?: Resolver<Message, ValidationSchema, "DELETE">,
       opts?: RequestOptions<Message, ValidationSchema, KnownRoles>
