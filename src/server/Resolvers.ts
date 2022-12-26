@@ -144,3 +144,5 @@ export class Resolvers<
       },
    };
 }
+
+//TODO: potentially only allow object and array in validation shcema

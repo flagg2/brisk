@@ -44,8 +44,8 @@ type ExpressResponseExtension<Message> = {
 export type ExtendedExpressResponse<Message> = ExpressResponse & ExpressResponseExtension<Message>;
 
 type ExpressRequestExtension<ValidationSchema extends ZodAny | null, _RouteType extends RouteType> = {
-   body: _RouteType extends "GET" ? never : ValidationSchema extends ZodObject<any> ? zod.infer<ValidationSchema> : never;
-   query: _RouteType extends "GET" ? (ValidationSchema extends ZodObject<any> ? zod.infer<ValidationSchema> : never) : never;
+   body: _RouteType extends "GET" ? never : ValidationSchema extends ZodAny ? zod.infer<ValidationSchema> : never;
+   query: _RouteType extends "GET" ? (ValidationSchema extends ZodAny ? zod.infer<ValidationSchema> : never) : never;
 };
 
 export type ExtendedExpressRequest<ValidationSchema extends ZodAny | null, _RouteType extends RouteType> = Omit<
