@@ -121,4 +121,5 @@ class Resolvers {
     }
 }
 exports.Resolvers = Resolvers;
+//TODO: potentially only allow object and array in validation shcema
 //# sourceMappingURL=Resolvers.js.map
