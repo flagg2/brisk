@@ -17,34 +17,34 @@ class ResponseGenerator {
     ok(res, message, data) {
         return respond(res, message, 200, data);
     }
-    badRequest(res, message) {
+    badRequest(res, message, data) {
         return respond(res, message, 400);
     }
     validationError(res, message, error) {
         return respond(res, message !== null && message !== void 0 ? message : this.messages.validationError, 422, error);
     }
-    unauthorized(res, message) {
+    unauthorized(res, message, data) {
         return respond(res, message !== null && message !== void 0 ? message : this.messages.unauthorized, 401);
     }
-    forbidden(res, message) {
+    forbidden(res, message, data) {
         return respond(res, message !== null && message !== void 0 ? message : this.messages.forbidden, 403);
     }
-    notFound(res, message) {
+    notFound(res, message, data) {
         return respond(res, message !== null && message !== void 0 ? message : this.messages.notFound, 404);
     }
-    methodNotAllowed(res, message) {
+    methodNotAllowed(res, message, data) {
         return respond(res, message !== null && message !== void 0 ? message : this.messages.methodNotAllowed, 405);
     }
-    conflict(res, message) {
+    conflict(res, message, data) {
         return respond(res, message !== null && message !== void 0 ? message : this.messages.conflict, 409);
     }
-    tooManyRequests(res, message) {
+    tooManyRequests(res, message, data) {
         return respond(res, message !== null && message !== void 0 ? message : this.messages.tooManyRequests, 429);
     }
-    internalServerError(res, message) {
+    internalServerError(res, message, data) {
         return respond(res, message !== null && message !== void 0 ? message : this.messages.internalServerError, 500);
     }
-    notImplemented(res, message) {
+    notImplemented(res, message, data) {
         return respond(res, message !== null && message !== void 0 ? message : this.messages.notImplemented, 501);
     }
 }

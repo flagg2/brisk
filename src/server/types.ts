@@ -28,17 +28,21 @@ export type Response<Message> = {
    status: number;
 };
 
+type ResponseFunction<Message, isMessageRequired extends boolean> = isMessageRequired extends true
+   ? (message: Message, data?: any) => Response<Message>
+   : (message?: Message, data?: any) => Response<Message>;
+
 type ExpressResponseExtension<Message> = {
-   ok: (message: Message, data?: any) => Response<Message>;
-   badRequest: (message: Message) => Response<Message>;
-   unauthorized: (message?: Message) => Response<Message>;
-   forbidden: (message?: Message) => Response<Message>;
-   notFound: (message?: Message) => Response<Message>;
-   conflict: (message?: Message) => Response<Message>;
-   methodNotAllowed: (message?: Message) => Response<Message>;
-   internalServerError: (message?: Message) => Response<Message>;
-   notImplemented: (message?: Message) => Response<Message>;
-   tooManyRequests: (message?: Message) => Response<Message>;
+   ok: ResponseFunction<Message, true>;
+   badRequest: ResponseFunction<Message, true>;
+   unauthorized: ResponseFunction<Message, false>;
+   forbidden: ResponseFunction<Message, false>;
+   notFound: ResponseFunction<Message, false>;
+   conflict: ResponseFunction<Message, false>;
+   methodNotAllowed: ResponseFunction<Message, false>;
+   internalServerError: ResponseFunction<Message, false>;
+   notImplemented: ResponseFunction<Message, false>;
+   tooManyRequests: ResponseFunction<Message, false>;
 };
 
 export type ExtendedExpressResponse<Message> = ExpressResponse & ExpressResponseExtension<Message>;

@@ -36,29 +36,29 @@ class Wrappers {
             res.ok = (message, data) => {
                 return this.responseGenerator.ok(res, message, data);
             };
-            res.badRequest = (message) => {
-                return this.responseGenerator.badRequest(res, message);
+            res.badRequest = (message, data) => {
+                return this.responseGenerator.badRequest(res, message, data);
             };
-            res.unauthorized = (message) => {
-                return this.responseGenerator.unauthorized(res, message);
+            res.unauthorized = (message, data) => {
+                return this.responseGenerator.unauthorized(res, message, data);
             };
-            res.forbidden = (message) => {
-                return this.responseGenerator.forbidden(res, message);
+            res.forbidden = (message, data) => {
+                return this.responseGenerator.forbidden(res, message, data);
             };
-            res.notFound = (message) => {
-                return this.responseGenerator.notFound(res, message);
+            res.notFound = (message, data) => {
+                return this.responseGenerator.notFound(res, message, data);
             };
-            res.conflict = (message) => {
-                return this.responseGenerator.conflict(res, message);
+            res.conflict = (message, data) => {
+                return this.responseGenerator.conflict(res, message, data);
             };
-            res.internalServerError = (message) => {
-                return this.responseGenerator.internalServerError(res, message);
+            res.internalServerError = (message, data) => {
+                return this.responseGenerator.internalServerError(res, message, data);
             };
-            res.notImplemented = (message) => {
-                return this.responseGenerator.notImplemented(res, message);
+            res.notImplemented = (message, data) => {
+                return this.responseGenerator.notImplemented(res, message, data);
             };
-            res.tooManyRequests = (message) => {
-                return this.responseGenerator.tooManyRequests(res, message);
+            res.tooManyRequests = (message, data) => {
+                return this.responseGenerator.tooManyRequests(res, message, data);
             };
             return fn(req, res, next);
         };
