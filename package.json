@@ -1,6 +1,6 @@
 {
    "name": "@flagg2/brisk",
-   "version": "1.0.15",
+   "version": "1.0.17",
    "description": "Brisk is a simple framework for building RESTful APIs based on Express",
    "main": "dist/index.js",
    "types": "src/index.ts",

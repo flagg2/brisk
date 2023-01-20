@@ -2,7 +2,13 @@ import { NextFunction, Request, Response } from "express";
 import { AllowedRouteMethods, ServerOptions } from "./Brisk";
 import { BriskLogger } from "./Logger";
 import { hrtime } from "process";
-import { ExtendedExpressResponse, MiddlewareResolver, RouteType, ValidationOptions } from "./types";
+import {
+   ExtendedExpressRequest,
+   ExtendedExpressResponse,
+   MiddlewareResolver,
+   RouteType,
+   ValidationOptions,
+} from "./types";
 import { ResponseGenerator } from "./Response";
 import helmet from "helmet";
 import { ZodSchema, ZodObject } from "zod";
@@ -73,10 +79,28 @@ export class Resolvers<
       blank: (_: Request, res: Response, next: NextFunction) => {
          next();
       },
+      keepRawBody: (req: Request, res: Response, next: NextFunction) => {
+         let data = "";
+         req.setEncoding("utf8");
+         req.on("data", (chunk) => {
+            data += chunk;
+         });
+         req.on("end", () => {
+            //@ts-expect-error
+            req.rawBody = data;
+            next();
+         });
+      },
    };
 
    public getServerCreationMiddlewares = () => {
-      const middlewares = [this.static.logRequest, this.static.json, this.static.urlencoded, this.static.cors];
+      const middlewares = [
+         this.static.logRequest,
+         this.static.keepRawBody,
+         this.static.json,
+         this.static.urlencoded,
+         this.static.cors,
+      ];
       if (this.options.useHelmet) {
          middlewares.push(this.static.helmet);
       }
@@ -104,7 +128,8 @@ export class Resolvers<
 
    dynamic = {
       validateSchema:
-         (validation: ValidationOptions<ZodSchema<any>> | null) => (req: Request, res: Response, next: NextFunction) => {
+         (validation: ValidationOptions<ZodSchema<any>> | null) =>
+         (req: Request, res: Response, next: NextFunction) => {
             if (validation == null) {
                return next();
             }
@@ -128,15 +153,17 @@ export class Resolvers<
                this.response.validationError(res, undefined, error);
             }
          },
-      validateRouteAndMethod: (allowedMethods: AllowedRouteMethods) => (req: Request, res: Response, next: NextFunction) => {
-         if (allowedMethods[req.path] == null) {
-            return this.response.notFound(res);
-         }
-         if (!allowedMethods[req.path].includes(req.method.toUpperCase() as RouteType)) {
-            return this.response.methodNotAllowed(res);
-         }
-         next();
-      },
+      validateRouteAndMethod:
+         (allowedMethods: AllowedRouteMethods) =>
+         (req: Request, res: Response, next: NextFunction) => {
+            if (allowedMethods[req.path] == null) {
+               return this.response.notFound(res);
+            }
+            if (!allowedMethods[req.path].includes(req.method.toUpperCase() as RouteType)) {
+               return this.response.methodNotAllowed(res);
+            }
+            next();
+         },
       authenticate: (allowedRoles: KnownRoles[keyof KnownRoles][] | null) => {
          return this.auth?.getMiddleware(allowedRoles) ?? this.static.blank;
       },

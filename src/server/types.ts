@@ -3,7 +3,11 @@ import { JwtPayload } from "jsonwebtoken";
 import zod, { ZodSchema, ZodObject } from "zod";
 import { Role } from "./Auth";
 
-export type Resolver<Message, ValidationSchema extends ZodSchema<any> | null, _RouteType extends RouteType> = (
+export type Resolver<
+   Message,
+   ValidationSchema extends ZodSchema<any> | null,
+   _RouteType extends RouteType
+> = (
    req: ExtendedExpressRequest<ValidationSchema, _RouteType>,
    res: ExtendedExpressResponse<Message>,
    next?: NextFunction
@@ -47,24 +51,36 @@ type ExpressResponseExtension<Message> = {
 
 export type ExtendedExpressResponse<Message> = ExpressResponse & ExpressResponseExtension<Message>;
 
-type ExpressRequestExtension<ValidationSchema extends ZodSchema<any> | null, _RouteType extends RouteType> = {
-   body: _RouteType extends "GET" ? never : ValidationSchema extends ZodSchema<any> ? zod.infer<ValidationSchema> : never;
-   query: _RouteType extends "GET" ? (ValidationSchema extends ZodSchema<any> ? zod.infer<ValidationSchema> : never) : never;
+type ExpressRequestExtension<
+   ValidationSchema extends ZodSchema<any> | null,
+   _RouteType extends RouteType
+> = {
+   body: _RouteType extends "GET"
+      ? never
+      : ValidationSchema extends ZodSchema<any>
+      ? zod.infer<ValidationSchema>
+      : never;
+   rawBody: _RouteType extends "GET" ? never : string;
+   query: _RouteType extends "GET"
+      ? ValidationSchema extends ZodSchema<any>
+         ? zod.infer<ValidationSchema>
+         : never
+      : never;
 };
 
-export type ExtendedExpressRequest<ValidationSchema extends ZodSchema<any> | null, _RouteType extends RouteType> = Omit<
-   ExpressRequest,
-   "body" | "query"
-> &
-   ExpressRequestExtension<ValidationSchema, _RouteType>;
+export type ExtendedExpressRequest<
+   ValidationSchema extends ZodSchema<any> | null,
+   _RouteType extends RouteType
+> = Omit<ExpressRequest, "body" | "query"> & ExpressRequestExtension<ValidationSchema, _RouteType>;
 
 export type AnyError = new (...args: any[]) => Error;
 
 export type RouteType = "GET" | "POST" | "PUT" | "DELETE" | "PATCH" | "OPTIONS";
 
-export type RolesResolver<AuthResolverStyle extends "token" | "request"> = AuthResolverStyle extends "token"
-   ? (decodedToken: JwtPayload) => Role[]
-   : (req: Request) => Role[];
+export type RolesResolver<AuthResolverStyle extends "token" | "request"> =
+   AuthResolverStyle extends "token"
+      ? (decodedToken: JwtPayload) => Role[]
+      : (req: Request) => Role[];
 
 export type ValidationOptions<ValidationSchema extends ZodSchema<any>> = {
    schema: ValidationSchema;

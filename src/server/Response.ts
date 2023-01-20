@@ -22,7 +22,7 @@ export class ResponseGenerator<Message> {
    }
 
    badRequest(res: ExpressResponse, message: Message, data?: any): Response<Message> {
-      return respond(res, message, 400);
+      return respond(res, message, 400, data);
    }
 
    validationError(res: ExpressResponse, message: Message | undefined, error: any): Response<Message> {
@@ -30,34 +30,34 @@ export class ResponseGenerator<Message> {
    }
 
    unauthorized(res: ExpressResponse, message?: Message, data?: any): Response<Message> {
-      return respond(res, message ?? this.messages.unauthorized, 401);
+      return respond(res, message ?? this.messages.unauthorized, 401, data);
    }
 
    forbidden(res: ExpressResponse, message?: Message, data?: any): Response<Message> {
-      return respond(res, message ?? this.messages.forbidden, 403);
+      return respond(res, message ?? this.messages.forbidden, 403, data);
    }
 
    notFound(res: ExpressResponse, message?: Message, data?: any): Response<Message> {
-      return respond(res, message ?? this.messages.notFound, 404);
+      return respond(res, message ?? this.messages.notFound, 404, data);
    }
 
    methodNotAllowed(res: ExpressResponse, message?: Message, data?: any): Response<Message> {
-      return respond(res, message ?? this.messages.methodNotAllowed, 405);
+      return respond(res, message ?? this.messages.methodNotAllowed, 405, data);
    }
 
    conflict(res: ExpressResponse, message?: Message, data?: any): Response<Message> {
-      return respond(res, message ?? this.messages.conflict, 409);
+      return respond(res, message ?? this.messages.conflict, 409, data);
    }
 
    tooManyRequests(res: ExpressResponse, message?: Message, data?: any): Response<Message> {
-      return respond(res, message ?? this.messages.tooManyRequests, 429);
+      return respond(res, message ?? this.messages.tooManyRequests, 429, data);
    }
 
    internalServerError(res: ExpressResponse, message?: Message, data?: any): Response<Message> {
-      return respond(res, message ?? this.messages.internalServerError, 500);
+      return respond(res, message ?? this.messages.internalServerError, 500, data);
    }
 
    notImplemented(res: ExpressResponse, message?: Message, data?: any): Response<Message> {
-      return respond(res, message ?? this.messages.notImplemented, 501);
+      return respond(res, message ?? this.messages.notImplemented, 501, data);
    }
 }
