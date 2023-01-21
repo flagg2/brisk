@@ -1,17 +1,30 @@
 import { NextFunction, Request as ExpressRequest } from "express";
 import { ResponseGenerator } from "./Response";
-import { AnyError, ErrorResolver, ExtendedExpressResponse, MiddlewareResolver, Resolver } from "./types";
+import {
+   AnyError,
+   ErrorResolver,
+   ExtendedExpressResponse,
+   MiddlewareResolver,
+   Resolver,
+} from "./types";
 
 export class Wrappers<Message> {
    private responseGenerator: ResponseGenerator<Message>;
    private customCatchers: Map<AnyError, ErrorResolver<Message>> | undefined;
-   constructor(responseGenerator: ResponseGenerator<Message>, customCatchers?: Map<AnyError, ErrorResolver<Message>>) {
+   constructor(
+      responseGenerator: ResponseGenerator<Message>,
+      customCatchers?: Map<AnyError, ErrorResolver<Message>>
+   ) {
       this.responseGenerator = responseGenerator;
       this.customCatchers = customCatchers;
    }
 
    private catchErrors(fn: MiddlewareResolver<Message>) {
-      return async (req: ExpressRequest, res: ExtendedExpressResponse<Message>, next: NextFunction) => {
+      return async (
+         req: ExpressRequest,
+         res: ExtendedExpressResponse<Message>,
+         next: NextFunction
+      ) => {
          try {
             return await fn(req, res, next);
          } catch (err: any) {
@@ -58,7 +71,7 @@ export class Wrappers<Message> {
       };
    }
 
-   public wrapRoute(resolvers: (MiddlewareResolver<Message> | Resolver<Message, any, any>)[]) {
+   public wrapRoute(resolvers: MiddlewareResolver<Message>[]) {
       console.log("Wrapping route");
       resolvers[0] = this.attachResponseMethods(resolvers[0]);
       resolvers = resolvers.map((resolver) => this.catchErrors(resolver));

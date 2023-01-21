@@ -50,9 +50,27 @@ class Resolvers {
             blank: (_, res, next) => {
                 next();
             },
+            keepRawBody: (req, res, next) => {
+                let data = "";
+                req.setEncoding("utf8");
+                req.on("data", (chunk) => {
+                    data += chunk;
+                });
+                req.on("end", () => {
+                    //@ts-expect-error
+                    req.rawBody = data;
+                    next();
+                });
+            },
         };
         this.getServerCreationMiddlewares = () => {
-            const middlewares = [this.static.logRequest, this.static.json, this.static.urlencoded, this.static.cors];
+            const middlewares = [
+                this.static.logRequest,
+                this.static.keepRawBody,
+                this.static.json,
+                this.static.urlencoded,
+                this.static.cors,
+            ];
             if (this.options.useHelmet) {
                 middlewares.push(this.static.helmet);
             }

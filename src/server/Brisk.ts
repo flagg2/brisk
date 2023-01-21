@@ -4,7 +4,15 @@ import http from "http";
 import fs from "fs";
 import { BriskLogger } from "./Logger";
 import { ResponseGenerator } from "./Response";
-import { AnyError, ErrorResolver, MiddlewareResolver, Resolver, RolesResolver, RouteType, ValidationOptions } from "./types";
+import {
+   AnyError,
+   ErrorResolver,
+   MiddlewareResolver,
+   Resolver,
+   RolesResolver,
+   RouteType,
+   ValidationOptions,
+} from "./types";
 import { ErrorMessages, defaultErrorMessages } from "./DefaultErrorMessages";
 import { Auth, Role } from "./Auth";
 import { DuplicateRequestFilter } from "./RequestLimiter";
@@ -97,10 +105,16 @@ export class Brisk<
          options.errorMessageOverrides ?? (defaultErrorMessages as ErrorMessages<Message>)
       );
 
-      this.duplicateRequestFilter = new DuplicateRequestFilter<Message>(options.allowDuplicateRequests);
+      this.duplicateRequestFilter = new DuplicateRequestFilter<Message>(
+         options.allowDuplicateRequests
+      );
       if (options.authConfig) {
          const { signingSecret, rolesResolver, resolverType } = options.authConfig;
-         this.auth = new Auth<Message, AuthResolverStyle>(signingSecret, rolesResolver, resolverType);
+         this.auth = new Auth<Message, AuthResolverStyle>(
+            signingSecret,
+            rolesResolver,
+            resolverType
+         );
       }
 
       this.wrappers = new Wrappers<Message>(this.response, options.customCatchers);
@@ -169,7 +183,7 @@ export class Brisk<
          ...generatedMiddlewares,
          ...(middlewares ?? []),
          resolver ?? this.resolvers.static.notImplemented,
-      ]);
+      ] as MiddlewareResolver<Message>[]);
 
       this.router[type.toLowerCase()](path, finalResolvers);
    }
