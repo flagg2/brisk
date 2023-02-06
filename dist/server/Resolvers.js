@@ -51,16 +51,12 @@ class Resolvers {
                 next();
             },
             keepRawBody: (req, res, next) => {
-                let data = "";
-                req.setEncoding("utf8");
+                let request = req;
+                request.rawBody = "";
                 req.on("data", (chunk) => {
-                    data += chunk;
+                    request.rawBody += chunk;
                 });
-                req.on("end", () => {
-                    //@ts-expect-error
-                    req.rawBody = data;
-                    next();
-                });
+                next();
             },
         };
         this.getServerCreationMiddlewares = () => {

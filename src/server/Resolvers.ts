@@ -80,16 +80,15 @@ export class Resolvers<
          next();
       },
       keepRawBody: (req: Request, res: Response, next: NextFunction) => {
-         let data = "";
-         req.setEncoding("utf8");
+         let request = req as Request & {
+            rawBody: string;
+         };
+         request.rawBody = "";
          req.on("data", (chunk) => {
-            data += chunk;
+            request.rawBody += chunk;
          });
-         req.on("end", () => {
-            //@ts-expect-error
-            req.rawBody = data;
-            next();
-         });
+
+         next();
       },
    };
 

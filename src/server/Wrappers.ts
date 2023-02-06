@@ -72,7 +72,6 @@ export class Wrappers<Message> {
    }
 
    public wrapRoute(resolvers: MiddlewareResolver<Message>[]) {
-      console.log("Wrapping route");
       resolvers[0] = this.attachResponseMethods(resolvers[0]);
       resolvers = resolvers.map((resolver) => this.catchErrors(resolver));
       return resolvers;

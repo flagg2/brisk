@@ -48,7 +48,6 @@ export class DuplicateRequestFilter<Message> {
          if (!this.shouldAllowRequest(requestIdentity)) {
             return res.tooManyRequests();
          }
-         console.log(this.requests);
          this.requests.add(requestIdentity.toString());
          next();
          setTimeout(() => {
@@ -56,7 +55,6 @@ export class DuplicateRequestFilter<Message> {
          }, 10000);
          res.on("finish", () => {
             this.requests.delete(requestIdentity.toString());
-            console.log("finished");
          });
       };
    }

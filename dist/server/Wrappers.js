@@ -64,7 +64,6 @@ class Wrappers {
         };
     }
     wrapRoute(resolvers) {
-        console.log("Wrapping route");
         resolvers[0] = this.attachResponseMethods(resolvers[0]);
         resolvers = resolvers.map((resolver) => this.catchErrors(resolver));
         return resolvers;
