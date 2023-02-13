@@ -1,4 +1,4 @@
-import { Role } from "./server/Auth";
-import { Brisk } from "./server/Brisk";
+import { Role } from "./server/Auth"
+import { Brisk } from "./server/Brisk"
 
-export { Role, Brisk };
+export { Role, Brisk }

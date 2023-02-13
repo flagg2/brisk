@@ -1,13 +1,14 @@
 {
    "name": "@flagg2/brisk",
-   "version": "1.0.21",
+   "version": "1.0.22",
    "description": "Brisk is a simple framework for building RESTful APIs based on Express",
    "main": "dist/index.js",
    "types": "src/index.ts",
    "scripts": {
       "start": "node ./dist/index.js",
       "build": "tsc",
-      "test": "echo \"Error: no test specified\" && exit 1"
+      "test": "echo \"Error: no test specified\" && exit 1",
+      "prettier": "prettier --write ."
    },
    "author": "",
    "license": "ISC",
@@ -26,5 +27,16 @@
       "@types/express": "^4.17.15",
       "@types/node": "^18.11.17"
    },
-   "devDependencies": {}
+   "devDependencies": {
+      "prettier": "2.8.3"
+   },
+   "prettier": {
+      "printWidth": 80,
+      "singleQuote": false,
+      "trailingComma": "all",
+      "tabWidth": 3,
+      "semi": false,
+      "arrowParens": "always",
+      "endOfLine": "lf"
+   }
 }
