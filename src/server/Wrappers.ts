@@ -1,5 +1,5 @@
 import { NextFunction, Request as ExpressRequest } from "express"
-import { ResponseGenerator } from "./Response"
+import { ResponseContent, ResponseSender } from "./Response"
 import {
    AnyError,
    ErrorResolver,
@@ -9,10 +9,10 @@ import {
 } from "./types"
 
 export class Wrappers<Message> {
-   private responseGenerator: ResponseGenerator<Message>
+   private responseGenerator: ResponseSender<Message>
    private customCatchers: Map<AnyError, ErrorResolver<Message>> | undefined
    constructor(
-      responseGenerator: ResponseGenerator<Message>,
+      responseGenerator: ResponseSender<Message>,
       customCatchers?: Map<AnyError, ErrorResolver<Message>>,
    ) {
       this.responseGenerator = responseGenerator
@@ -76,6 +76,9 @@ export class Wrappers<Message> {
          }
          res.tooManyRequests = (message?: Message, data?: any) => {
             return this.responseGenerator.tooManyRequests(res, message, data)
+         }
+         res.respondWith = (content: ResponseContent<Message>) => {
+            return this.responseGenerator.respondWith(res, content)
          }
          return fn(req, res, next)
       }

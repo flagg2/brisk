@@ -6,6 +6,7 @@ import {
 import { JwtPayload } from "jsonwebtoken"
 import zod, { ZodSchema, ZodObject } from "zod"
 import { Role } from "./Auth"
+import { ResponseContent } from "./Response"
 
 export type Resolver<
    Message,
@@ -15,22 +16,22 @@ export type Resolver<
    req: ExtendedExpressRequest<ValidationSchema, _RouteType>,
    res: ExtendedExpressResponse<Message>,
    next?: NextFunction,
-) => Promise<Response<Message>> | Response<Message>
+) => Promise<RouteResponse<Message>> | RouteResponse<Message>
 
 export type MiddlewareResolver<Message> = (
    req: ExpressRequest,
    res: ExtendedExpressResponse<Message>,
    next: NextFunction,
-) => Promise<Response<Message> | void> | Response<Message> | void
+) => Promise<RouteResponse<Message> | void> | RouteResponse<Message> | void
 
 export type ErrorResolver<Message> = (
    req: ExpressRequest,
    res: ExtendedExpressResponse<Message>,
    next: NextFunction | undefined,
    error: Error,
-) => Response<Message>
+) => RouteResponse<Message>
 
-export type Response<Message> = {
+export type RouteResponse<Message> = {
    message: Message
    data: any
    status: number
@@ -40,11 +41,12 @@ type ResponseFunction<
    Message,
    isMessageRequired extends boolean,
 > = isMessageRequired extends true
-   ? (message: Message, data?: any) => Response<Message>
-   : (message?: Message, data?: any) => Response<Message>
+   ? (message: Message, data?: any) => RouteResponse<Message>
+   : (message?: Message, data?: any) => RouteResponse<Message>
 
 type ExpressResponseExtension<Message> = {
    ok: ResponseFunction<Message, true>
+   respondWith: (response: ResponseContent<Message>) => RouteResponse<Message>
    badRequest: ResponseFunction<Message, true>
    unauthorized: ResponseFunction<Message, false>
    forbidden: ResponseFunction<Message, false>

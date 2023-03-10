@@ -1,11 +1,12 @@
 {
    "name": "@flagg2/brisk",
-   "version": "1.0.22",
+   "version": "1.0.25",
    "description": "Brisk is a simple framework for building RESTful APIs based on Express",
    "main": "dist/index.js",
    "types": "src/index.ts",
    "scripts": {
       "start": "node ./dist/index.js",
+      "pg": "node ./dist/pg.js",
       "build": "tsc",
       "test": "echo \"Error: no test specified\" && exit 1",
       "prettier": "prettier --write ."

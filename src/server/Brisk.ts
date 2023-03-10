@@ -3,7 +3,7 @@ import https from "https"
 import http from "http"
 import fs from "fs"
 import { BriskLogger } from "./Logger"
-import { ResponseGenerator } from "./Response"
+import { ResponseSender } from "./Response"
 import {
    AnyError,
    ErrorResolver,
@@ -81,7 +81,8 @@ export class Brisk<
    public app: Application
    public router: Router
    public roles: KnownRoles
-   private response: ResponseGenerator<Message>
+   private started: boolean = false
+   private response: ResponseSender<Message>
    private options: ServerOptions<Message, KnownRoles, AuthResolverStyle>
    private allowedMethods: AllowedRouteMethods = {}
    private resolvers: Resolvers<Message, KnownRoles, AuthResolverStyle>
@@ -103,7 +104,7 @@ export class Brisk<
          ],
       })
 
-      this.response = new ResponseGenerator<Message>(
+      this.response = new ResponseSender<Message>(
          options.errorMessageOverrides ??
             (defaultErrorMessages as ErrorMessages<Message>),
       )
@@ -168,6 +169,8 @@ export class Brisk<
       )) {
          this.app.use(resolver)
       }
+
+      this.started = true
    }
 
    //public follow middleware pattern as in constructor
@@ -180,6 +183,10 @@ export class Brisk<
       resolver?: Resolver<Message, ValidationSchema, _RouteType>
       opts?: RequestOptions<Message, ValidationSchema, KnownRoles>
    }) {
+      if (this.started) {
+         throw new Error("Cannot add routes after server has started")
+      }
+
       let { type, path, resolver, opts } = config
       const { middlewares, allowedRoles, allowDuplicateRequests, validation } =
          opts ?? {}
@@ -198,7 +205,7 @@ export class Brisk<
          resolver ?? this.resolvers.static.notImplemented,
       ] as MiddlewareResolver<Message>[])
 
-      // @ts-expect-error
+      // @ts-ignore
       this.router[type.toLowerCase()](path, finalResolvers)
    }
 

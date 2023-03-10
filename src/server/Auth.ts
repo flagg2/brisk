@@ -1,5 +1,5 @@
 import { NextFunction, Request } from "express"
-import { ResponseGenerator } from "./Response"
+import { ResponseSender } from "./Response"
 import { ExtendedExpressResponse, RolesResolver } from "./types"
 import jwt, { JwtPayload } from "jsonwebtoken"
 

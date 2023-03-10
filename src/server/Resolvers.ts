@@ -9,7 +9,7 @@ import {
    RouteType,
    ValidationOptions,
 } from "./types"
-import { ResponseGenerator } from "./Response"
+import { ResponseSender } from "./Response"
 import helmet from "helmet"
 import { ZodSchema, ZodObject } from "zod"
 import express from "express"
@@ -30,14 +30,14 @@ export class Resolvers<
 > {
    private options: ServerOptions<Message, KnownRoles, AuthResolverStyle>
    private logger: BriskLogger
-   private response: ResponseGenerator<Message>
+   private response: ResponseSender<Message>
    private duplicateRequestFilter: DuplicateRequestFilter<Message>
    private auth: Auth<Message, AuthResolverStyle> | null
 
    constructor(
       options: ServerOptions<Message, KnownRoles, AuthResolverStyle>,
       logger: BriskLogger,
-      response: ResponseGenerator<Message>,
+      response: ResponseSender<Message>,
       duplicateRequestFilter: DuplicateRequestFilter<Message>,
       auth: Auth<Message, AuthResolverStyle> | null,
    ) {
