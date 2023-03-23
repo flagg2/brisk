@@ -19,13 +19,14 @@ import { DuplicateRequestFilter } from "./RequestLimiter"
 import { ZodSchema } from "zod"
 import { Wrappers } from "./Wrappers"
 import { Resolvers } from "./Resolvers"
+import { ObjectData } from "@flagg2/schema"
 
 export type ServerOptions<
    Message,
    KnownRoles extends {
       [key: string]: Role
    },
-   AuthResolverStyle extends "request" | "token",
+   UserTokenSchema extends ObjectData<any> | undefined = undefined,
 > = {
    port: number
    host?: string
@@ -39,12 +40,20 @@ export type ServerOptions<
    //    methods: string;
    //    allowedHeaders: string;
    // };
-   authConfig?: {
-      signingSecret: string
-      resolverType: AuthResolverStyle
-      rolesResolver: RolesResolver<AuthResolverStyle>
-      knownRoles: KnownRoles
-   }
+   authConfig?:
+      | {
+           signingSecret: string
+           resolverType: "token"
+           rolesResolver: RolesResolver<UserTokenSchema>
+           knownRoles: KnownRoles
+           userTokenSchema: UserTokenSchema
+        }
+      | {
+           resolverType: "request"
+           rolesResolver: RolesResolver<UserTokenSchema>
+           knownRoles: KnownRoles
+        }
+
    loggingMethods?: ((message: string) => void)[]
    errorMessageOverrides?: ErrorMessages<Message>
    customCatchers?: Map<AnyError, ErrorResolver<Message>>
@@ -76,22 +85,22 @@ export class Brisk<
    KnownRoles extends {
       [key: string]: Role
    } = never,
-   AuthResolverStyle extends "request" | "token" = "token",
+   UserTokenSchema extends ObjectData<any> | undefined = undefined,
 > {
    public app: Application
    public router: Router
    public roles: KnownRoles
    private started: boolean = false
    private response: ResponseSender<Message>
-   private options: ServerOptions<Message, KnownRoles, AuthResolverStyle>
+   private options: ServerOptions<Message, KnownRoles, UserTokenSchema>
    private allowedMethods: AllowedRouteMethods = {}
-   private resolvers: Resolvers<Message, KnownRoles, AuthResolverStyle>
+   private resolvers: Resolvers<Message, KnownRoles, UserTokenSchema>
    private wrappers: Wrappers<Message>
    private logger: BriskLogger
-   private auth: Auth<Message, AuthResolverStyle> | null = null
+   private auth: Auth<Message, UserTokenSchema> | null = null
    private duplicateRequestFilter: DuplicateRequestFilter<Message>
 
-   constructor(options: ServerOptions<Message, KnownRoles, AuthResolverStyle>) {
+   constructor(options: ServerOptions<Message, KnownRoles, UserTokenSchema>) {
       this.options = options
       this.allowedMethods = {}
       this.roles = options.authConfig?.knownRoles ?? ({} as KnownRoles)
@@ -113,9 +122,14 @@ export class Brisk<
          options.allowDuplicateRequests,
       )
       if (options.authConfig) {
-         const { signingSecret, rolesResolver, resolverType } =
-            options.authConfig
-         this.auth = new Auth<Message, AuthResolverStyle>(
+         const { rolesResolver, resolverType } = options.authConfig
+         let signingSecret = ""
+
+         if (resolverType === "token") {
+            signingSecret = options.authConfig.signingSecret
+         }
+
+         this.auth = new Auth<Message, UserTokenSchema>(
             signingSecret,
             rolesResolver,
             resolverType,
@@ -126,7 +140,7 @@ export class Brisk<
          this.response,
          options.customCatchers,
       )
-      this.resolvers = new Resolvers<Message, KnownRoles, AuthResolverStyle>(
+      this.resolvers = new Resolvers<Message, KnownRoles, UserTokenSchema>(
          this.options,
          this.logger,
          this.response,
@@ -180,7 +194,12 @@ export class Brisk<
    >(config: {
       type: _RouteType
       path: string
-      resolver?: Resolver<Message, ValidationSchema, _RouteType>
+      resolver?: Resolver<
+         Message,
+         ValidationSchema,
+         _RouteType,
+         UserTokenSchema
+      >
       opts?: RequestOptions<Message, ValidationSchema, KnownRoles>
    }) {
       if (this.started) {
@@ -211,7 +230,7 @@ export class Brisk<
 
    public get<ValidationSchema extends ZodSchema<any>>(
       path: string,
-      resolver?: Resolver<Message, ValidationSchema, "GET">,
+      resolver?: Resolver<Message, ValidationSchema, "GET", UserTokenSchema>,
       opts?: RequestOptions<Message, ValidationSchema, KnownRoles>,
    ) {
       this.addRoute({
@@ -224,7 +243,7 @@ export class Brisk<
 
    public post<ValidationSchema extends ZodSchema<any>>(
       path: string,
-      resolver?: Resolver<Message, ValidationSchema, "POST">,
+      resolver?: Resolver<Message, ValidationSchema, "POST", UserTokenSchema>,
       opts?: RequestOptions<Message, ValidationSchema, KnownRoles>,
    ) {
       this.addRoute({
@@ -237,7 +256,7 @@ export class Brisk<
 
    public put<ValidationSchema extends ZodSchema<any>>(
       path: string,
-      resolver?: Resolver<Message, ValidationSchema, "PUT">,
+      resolver?: Resolver<Message, ValidationSchema, "PUT", UserTokenSchema>,
       opts?: RequestOptions<Message, ValidationSchema, KnownRoles>,
    ) {
       this.addRoute({
@@ -250,7 +269,7 @@ export class Brisk<
 
    public delete<ValidationSchema extends ZodSchema<any>>(
       path: string,
-      resolver?: Resolver<Message, ValidationSchema, "DELETE">,
+      resolver?: Resolver<Message, ValidationSchema, "DELETE", UserTokenSchema>,
       opts?: RequestOptions<Message, ValidationSchema, KnownRoles>,
    ) {
       this.addRoute({

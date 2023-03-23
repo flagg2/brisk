@@ -1,14 +1,35 @@
+import schema from "@flagg2/schema"
+import { Role } from "./server/Auth"
 import { Brisk } from "./server/Brisk"
 import { ResponseContent } from "./server/Response"
 
+const test = new Role("test", "test")
+
 const server = new Brisk({
    port: 3000,
+   authConfig: {
+      knownRoles: { test },
+      resolverType: "token",
+      signingSecret: "secret",
+      userTokenSchema: schema.object({
+         id: schema.string(),
+      }),
+      rolesResolver: () => {
+         return []
+      },
+   },
 })
 
-server.post("/", (req, res) => {
-   const response = responseIsGeneratedHere()
-   return res.respondWith(response)
-})
+server.post(
+   "/",
+   (req, res) => {
+      const response = responseIsGeneratedHere()
+      return res.respondWith(response)
+   },
+   {
+      allowedRoles: [test],
+   },
+)
 
 function responseIsGeneratedHere() {
    return new ResponseContent({

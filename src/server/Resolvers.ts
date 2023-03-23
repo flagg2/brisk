@@ -16,6 +16,7 @@ import express from "express"
 import cors from "cors"
 import { Auth, Role } from "./Auth"
 import { DuplicateRequestFilter } from "./RequestLimiter"
+import { ObjectData } from "@flagg2/schema"
 
 function getRequestSizeKB(req: Request) {
    return Number((req.socket.bytesRead / 1024).toFixed(2))
@@ -26,20 +27,20 @@ export class Resolvers<
    KnownRoles extends {
       [key: string]: Role
    },
-   AuthResolverStyle extends "request" | "token",
+   UserTokenSchema extends ObjectData<any> | undefined,
 > {
-   private options: ServerOptions<Message, KnownRoles, AuthResolverStyle>
+   private options: ServerOptions<Message, KnownRoles, UserTokenSchema>
    private logger: BriskLogger
    private response: ResponseSender<Message>
    private duplicateRequestFilter: DuplicateRequestFilter<Message>
-   private auth: Auth<Message, AuthResolverStyle> | null
+   private auth: Auth<Message, UserTokenSchema> | null
 
    constructor(
-      options: ServerOptions<Message, KnownRoles, AuthResolverStyle>,
+      options: ServerOptions<Message, KnownRoles, UserTokenSchema>,
       logger: BriskLogger,
       response: ResponseSender<Message>,
       duplicateRequestFilter: DuplicateRequestFilter<Message>,
-      auth: Auth<Message, AuthResolverStyle> | null,
+      auth: Auth<Message, UserTokenSchema> | null,
    ) {
       this.options = options
       this.logger = logger
@@ -120,6 +121,7 @@ export class Resolvers<
       validation: ValidationOptions<ZodSchema<any>> | null,
    ) {
       const middlewares: MiddlewareResolver<Message>[] = [
+         //@ts-expect-error - TODO: does not work because of request extension, would be nice to fix later
          this.dynamic.authenticate(allowedRoles),
          this.dynamic.filterDuplicateRequests(allowDuplicateRequests),
          this.dynamic.validateSchema(validation),

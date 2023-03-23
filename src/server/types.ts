@@ -1,3 +1,4 @@
+import { Convert } from "@flagg2/schema"
 import {
    Request as ExpressRequest,
    Response as ExpressResponse,
@@ -12,8 +13,9 @@ export type Resolver<
    Message,
    ValidationSchema extends ZodSchema<any> | null,
    _RouteType extends RouteType,
+   UserTokenSchema extends object | undefined,
 > = (
-   req: ExtendedExpressRequest<ValidationSchema, _RouteType>,
+   req: ExtendedExpressRequest<ValidationSchema, _RouteType, UserTokenSchema>,
    res: ExtendedExpressResponse<Message>,
    next?: NextFunction,
 ) => Promise<RouteResponse<Message>> | RouteResponse<Message>
@@ -64,6 +66,7 @@ export type ExtendedExpressResponse<Message> = ExpressResponse &
 type ExpressRequestExtension<
    ValidationSchema extends ZodSchema<any> | null,
    _RouteType extends RouteType,
+   UserTokenSchema extends object | undefined,
 > = {
    body: _RouteType extends "GET"
       ? never
@@ -76,22 +79,26 @@ type ExpressRequestExtension<
          ? zod.infer<ValidationSchema>
          : never
       : never
+   user: UserTokenSchema extends undefined
+      ? undefined
+      : Convert<UserTokenSchema> | undefined
 }
 
 export type ExtendedExpressRequest<
    ValidationSchema extends ZodSchema<any> | null,
    _RouteType extends RouteType,
+   UserTokenSchema extends object | undefined,
 > = Omit<ExpressRequest, "body" | "query"> &
-   ExpressRequestExtension<ValidationSchema, _RouteType>
+   ExpressRequestExtension<ValidationSchema, _RouteType, UserTokenSchema>
 
 export type AnyError = new (...args: any[]) => Error
 
 export type RouteType = "GET" | "POST" | "PUT" | "DELETE" | "PATCH" | "OPTIONS"
 
-export type RolesResolver<AuthResolverStyle extends "token" | "request"> =
-   AuthResolverStyle extends "token"
-      ? (decodedToken: JwtPayload) => Role[]
-      : (req: Request) => Role[]
+export type RolesResolver<UserTokenSchema extends object | undefined> =
+   UserTokenSchema extends undefined
+      ? (req: Request) => Role[]
+      : (userToken: UserTokenSchema) => Role[]
 
 export type ValidationOptions<ValidationSchema extends ZodSchema<any>> = {
    schema: ValidationSchema
