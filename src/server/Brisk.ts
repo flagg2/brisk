@@ -267,6 +267,19 @@ export class Brisk<
       })
    }
 
+   public patch<ValidationSchema extends ZodSchema<any>>(
+      path: string,
+      resolver?: Resolver<Message, ValidationSchema, "PATCH", UserTokenSchema>,
+      opts?: RequestOptions<Message, ValidationSchema, KnownRoles>,
+   ) {
+      this.addRoute({
+         type: "PATCH",
+         path,
+         resolver,
+         opts,
+      })
+   }
+
    public delete<ValidationSchema extends ZodSchema<any>>(
       path: string,
       resolver?: Resolver<Message, ValidationSchema, "DELETE", UserTokenSchema>,
