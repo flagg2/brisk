@@ -22,6 +22,19 @@ function getRequestSizeKB(req: Request) {
    return Number((req.socket.bytesRead / 1024).toFixed(2))
 }
 
+function pathToRegex(path: string): string {
+   const regexPattern = path
+      .split("/")
+      .map((segment) => {
+         if (segment.startsWith(":")) {
+            return ".+"
+         }
+         return segment
+      })
+      .join("\\/")
+   return `^${regexPattern}$`
+}
+
 export class Resolvers<
    Message,
    KnownRoles extends {
@@ -159,11 +172,18 @@ export class Resolvers<
       validateRouteAndMethod:
          (allowedMethods: AllowedRouteMethods) =>
          (req: Request, res: Response, next: NextFunction) => {
-            if (allowedMethods[req.path] == null) {
+            // this handles cases in which generic params are used
+            // and would not be correctly matched without regex
+            const matchingPath = Object.keys(allowedMethods).find((route) =>
+               new RegExp(pathToRegex(route)).test(req.path),
+            )
+
+            if (matchingPath == null) {
                return this.response.notFound(res)
             }
+
             if (
-               !allowedMethods[req.path].includes(
+               !allowedMethods[matchingPath].includes(
                   req.method.toUpperCase() as RouteType,
                )
             ) {
