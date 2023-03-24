@@ -1,4 +1,4 @@
-import express, { Request, Application, Router } from "express"
+import express, { Request, Application, Router, RequestHandler } from "express"
 import https from "https"
 import http from "http"
 import fs from "fs"
@@ -6,6 +6,7 @@ import { BriskLogger } from "./Logger"
 import { ResponseSender } from "./Response"
 import {
    AnyError,
+   CustomMiddlewareResolver,
    ErrorResolver,
    MiddlewareResolver,
    Resolver,
@@ -99,6 +100,10 @@ export class Brisk<
    private logger: BriskLogger
    private auth: Auth<Message, UserTokenSchema> | null = null
    private duplicateRequestFilter: DuplicateRequestFilter<Message>
+   private middlewares: {
+      resolver: CustomMiddlewareResolver<Message, UserTokenSchema, string>
+      path: string
+   }[] = []
 
    constructor(options: ServerOptions<Message, KnownRoles, UserTokenSchema>) {
       this.options = options
@@ -151,14 +156,24 @@ export class Brisk<
       for (const resolver of this.resolvers.getServerCreationMiddlewares()) {
          this.app.use(resolver)
       }
-
-      this.app.use("/", this.router)
    }
 
    public start() {
       const { port, httpsConfig } = this.options
       const startUpMessage = `🚀 Server up and running on port ${port} 🚀`
 
+      for (const resolver of this.resolvers.getServerStartUpMiddlewares(
+         this.allowedMethods,
+      )) {
+         this.app.use(resolver)
+      }
+
+      for (const { path, resolver } of this.middlewares) {
+         // @ts-expect-error
+         this.app.use(path, resolver)
+      }
+
+      this.app.use("/", this.router)
       if (httpsConfig) {
          const { key, cert } = httpsConfig
          const httpsServer = https.createServer(
@@ -176,12 +191,6 @@ export class Brisk<
          httpServer.listen(port, () => {
             console.log(startUpMessage)
          })
-      }
-
-      for (const resolver of this.resolvers.getServerStartUpMiddlewares(
-         this.allowedMethods,
-      )) {
-         this.app.use(resolver)
       }
 
       this.started = true
@@ -322,6 +331,16 @@ export class Brisk<
          path,
          resolver,
          opts,
+      })
+   }
+
+   public use<Path extends string>(
+      path: Path,
+      middleware: CustomMiddlewareResolver<Message, UserTokenSchema, Path>,
+   ) {
+      this.middlewares.push({
+         path: this.prependSlash(path) as Path,
+         resolver: middleware as CustomMiddlewareResolver<Message, any, any>,
       })
    }
 

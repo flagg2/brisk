@@ -1,4 +1,5 @@
-import { Brisk, Role, ResponseContent, schema } from "./index"
+import { Brisk, Role, ResponseContent } from "./index"
+import schema from "@flagg2/schema"
 
 const test = new Role("test", "test")
 
@@ -12,20 +13,23 @@ const server = new Brisk({
          id: schema.string(),
       }),
       rolesResolver: () => {
-         return []
+         return [test]
       },
    },
 })
 
+server.use("/", (req, res, next) => {
+   console.log("middleware")
+   return next()
+})
+
 server.post(
-   "/",
+   "/:id/:kokot",
    (req, res) => {
       const response = responseIsGeneratedHere()
       return res.respondWith(response)
    },
-   {
-      allowedRoles: [test],
-   },
+   {},
 )
 
 function responseIsGeneratedHere() {

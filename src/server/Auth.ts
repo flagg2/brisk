@@ -38,7 +38,7 @@ export class Auth<Message, UserTokenSchema extends AnyData | undefined> {
             const token =
                String(req.headers["Authorization"]) ||
                String(req.headers["authorization"])
-            if (!token) {
+            if (!token && allowedRoles != null) {
                return res.unauthorized()
             }
 

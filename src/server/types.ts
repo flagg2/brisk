@@ -1,5 +1,5 @@
 import { Convert } from "@flagg2/schema"
-import {
+import e, {
    Request as ExpressRequest,
    Response as ExpressResponse,
    NextFunction,
@@ -25,6 +25,17 @@ export type Resolver<
    res: ExtendedExpressResponse<Message>,
    next?: NextFunction,
 ) => Promise<RouteResponse<Message>> | RouteResponse<Message>
+
+//TODO: using post here but should be a designated type
+export type CustomMiddlewareResolver<
+   Message,
+   UserTokenSchema extends object | undefined,
+   Path extends string,
+> = (
+   req: ExtendedExpressRequest<null, "POST", UserTokenSchema, Path>,
+   res: ExtendedExpressResponse<Message>,
+   next: NextFunction,
+) => Promise<RouteResponse<Message>> | RouteResponse<Message> | void
 
 export type MiddlewareResolver<Message> = (
    req: ExpressRequest,
