@@ -19,14 +19,14 @@ import { DuplicateRequestFilter } from "./RequestLimiter"
 import { ZodSchema } from "zod"
 import { Wrappers } from "./Wrappers"
 import { Resolvers } from "./Resolvers"
-import { ObjectData } from "@flagg2/schema"
+import { AnyData } from "@flagg2/schema"
 
 export type ServerOptions<
    Message,
    KnownRoles extends {
       [key: string]: Role
    },
-   UserTokenSchema extends ObjectData<any> | undefined = undefined,
+   UserTokenSchema extends AnyData | undefined = undefined,
 > = {
    port: number
    host?: string
@@ -85,7 +85,7 @@ export class Brisk<
    KnownRoles extends {
       [key: string]: Role
    } = never,
-   UserTokenSchema extends ObjectData<any> | undefined = undefined,
+   UserTokenSchema extends AnyData | undefined = undefined,
 > {
    public app: Application
    public router: Router

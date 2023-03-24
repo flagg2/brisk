@@ -16,7 +16,7 @@ import express from "express"
 import cors from "cors"
 import { Auth, Role } from "./Auth"
 import { DuplicateRequestFilter } from "./RequestLimiter"
-import { ObjectData } from "@flagg2/schema"
+import { AnyData } from "@flagg2/schema"
 
 function getRequestSizeKB(req: Request) {
    return Number((req.socket.bytesRead / 1024).toFixed(2))
@@ -27,7 +27,7 @@ export class Resolvers<
    KnownRoles extends {
       [key: string]: Role
    },
-   UserTokenSchema extends ObjectData<any> | undefined,
+   UserTokenSchema extends AnyData | undefined,
 > {
    private options: ServerOptions<Message, KnownRoles, UserTokenSchema>
    private logger: BriskLogger

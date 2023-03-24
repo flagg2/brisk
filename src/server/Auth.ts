@@ -6,7 +6,7 @@ import {
    RolesResolver,
 } from "./types"
 import jwt, { JwtPayload } from "jsonwebtoken"
-import { Convert, ObjectData } from "@flagg2/schema"
+import { Convert, AnyData } from "@flagg2/schema"
 
 function extractBearerToken(token: string) {
    const bearer = "Bearer "
@@ -20,10 +20,8 @@ export class Role {
    constructor(public name: string, public description: string) {}
 }
 
-export class Auth<
-   Message,
-   UserTokenSchema extends ObjectData<any> | undefined,
-> {
+//TODO: check correctness of this
+export class Auth<Message, UserTokenSchema extends AnyData | undefined> {
    constructor(
       private signingSecret: string,
       private rolesResolver: RolesResolver<UserTokenSchema>,
@@ -35,9 +33,6 @@ export class Auth<
          res: ExtendedExpressResponse<Message>,
          next: NextFunction,
       ) => {
-         if (allowedRoles == null) {
-            return next()
-         }
          let decodedToken: Convert<UserTokenSchema> | undefined
          if (this.authResolverStyle === "token") {
             const token =
@@ -54,18 +49,25 @@ export class Auth<
                   this.signingSecret,
                ) as Convert<UserTokenSchema>
             } catch (e) {
-               return res.unauthorized()
+               if (allowedRoles != null) {
+                  return res.unauthorized()
+               }
             }
 
-            if (!decodedToken) {
+            if (!decodedToken && allowedRoles != null) {
                return res.unauthorized()
             }
             // @ts-ignore
             req.user = decodedToken
          }
 
+         if (allowedRoles == null) {
+            return next()
+         }
+
          // @ts-ignore
          const roles = this.rolesResolver(decodedToken ?? req)
+
          if (!roles.some((role) => allowedRoles.includes(role))) {
             return res.forbidden()
          }

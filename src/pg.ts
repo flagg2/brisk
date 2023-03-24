@@ -1,7 +1,4 @@
-import schema from "@flagg2/schema"
-import { Role } from "./server/Auth"
-import { Brisk } from "./server/Brisk"
-import { ResponseContent } from "./server/Response"
+import { Brisk, Role, ResponseContent, schema } from "./index"
 
 const test = new Role("test", "test")
 
