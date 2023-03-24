@@ -98,7 +98,7 @@ export type RouteType = "GET" | "POST" | "PUT" | "DELETE" | "PATCH" | "OPTIONS"
 export type RolesResolver<UserTokenSchema extends object | undefined> =
    UserTokenSchema extends undefined
       ? (req: Request) => Role[]
-      : (userToken: UserTokenSchema) => Role[]
+      : (userToken: Convert<UserTokenSchema>) => Role[]
 
 export type ValidationOptions<ValidationSchema extends ZodSchema<any>> = {
    schema: ValidationSchema
