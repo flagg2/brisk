@@ -29,7 +29,7 @@ export class Auth<Message, UserTokenSchema extends AnyData | undefined> {
    ) {}
    public getMiddleware(allowedRoles: Role[] | null) {
       return (
-         req: ExtendedExpressRequest<any, any, UserTokenSchema>,
+         req: ExtendedExpressRequest<any, any, UserTokenSchema, any>,
          res: ExtendedExpressResponse<Message>,
          next: NextFunction,
       ) => {

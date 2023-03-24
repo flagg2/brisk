@@ -14,8 +14,14 @@ export type Resolver<
    ValidationSchema extends ZodSchema<any> | null,
    _RouteType extends RouteType,
    UserTokenSchema extends object | undefined,
+   Path extends string,
 > = (
-   req: ExtendedExpressRequest<ValidationSchema, _RouteType, UserTokenSchema>,
+   req: ExtendedExpressRequest<
+      ValidationSchema,
+      _RouteType,
+      UserTokenSchema,
+      Path
+   >,
    res: ExtendedExpressResponse<Message>,
    next?: NextFunction,
 ) => Promise<RouteResponse<Message>> | RouteResponse<Message>
@@ -63,10 +69,21 @@ type ExpressResponseExtension<Message> = {
 export type ExtendedExpressResponse<Message> = ExpressResponse &
    ExpressResponseExtension<Message>
 
+type ExtractParams<S extends string> = S extends `${infer P}/${infer R}`
+   ? (P extends `:${infer T}` ? T : never) | ExtractParams<R>
+   : S extends `:${infer T}`
+   ? T
+   : never
+
+type ParamsFromPath<Path extends string> = {
+   [K in ExtractParams<Path>]: string
+}
+
 type ExpressRequestExtension<
    ValidationSchema extends ZodSchema<any> | null,
    _RouteType extends RouteType,
    UserTokenSchema extends object | undefined,
+   Path extends string,
 > = {
    body: _RouteType extends "GET"
       ? never
@@ -82,14 +99,16 @@ type ExpressRequestExtension<
    user: UserTokenSchema extends undefined
       ? undefined
       : Convert<UserTokenSchema> | undefined
+   params: ParamsFromPath<Path>
 }
 
 export type ExtendedExpressRequest<
    ValidationSchema extends ZodSchema<any> | null,
    _RouteType extends RouteType,
    UserTokenSchema extends object | undefined,
+   Path extends string,
 > = Omit<ExpressRequest, "body" | "query"> &
-   ExpressRequestExtension<ValidationSchema, _RouteType, UserTokenSchema>
+   ExpressRequestExtension<ValidationSchema, _RouteType, UserTokenSchema, Path>
 
 export type AnyError = new (...args: any[]) => Error
 

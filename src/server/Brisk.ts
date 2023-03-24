@@ -191,14 +191,16 @@ export class Brisk<
    public addRoute<
       _RouteType extends RouteType,
       ValidationSchema extends ZodSchema<any>,
+      Path extends string,
    >(config: {
       type: _RouteType
-      path: string
+      path: Path
       resolver?: Resolver<
          Message,
          ValidationSchema,
          _RouteType,
-         UserTokenSchema
+         UserTokenSchema,
+         Path
       >
       opts?: RequestOptions<Message, ValidationSchema, KnownRoles>
    }) {
@@ -210,7 +212,7 @@ export class Brisk<
       const { middlewares, allowedRoles, allowDuplicateRequests, validation } =
          opts ?? {}
 
-      path = this.prependSlash(path)
+      path = this.prependSlash(path) as Path
       this.addToAllowedMethods(path, type)
 
       let generatedMiddlewares = this.resolvers.getRouteMiddlewares(
@@ -228,9 +230,15 @@ export class Brisk<
       this.router[type.toLowerCase()](path, finalResolvers)
    }
 
-   public get<ValidationSchema extends ZodSchema<any>>(
-      path: string,
-      resolver?: Resolver<Message, ValidationSchema, "GET", UserTokenSchema>,
+   public get<ValidationSchema extends ZodSchema<any>, Path extends string>(
+      path: Path,
+      resolver?: Resolver<
+         Message,
+         ValidationSchema,
+         "GET",
+         UserTokenSchema,
+         Path
+      >,
       opts?: RequestOptions<Message, ValidationSchema, KnownRoles>,
    ) {
       this.addRoute({
@@ -241,9 +249,15 @@ export class Brisk<
       })
    }
 
-   public post<ValidationSchema extends ZodSchema<any>>(
-      path: string,
-      resolver?: Resolver<Message, ValidationSchema, "POST", UserTokenSchema>,
+   public post<ValidationSchema extends ZodSchema<any>, Path extends string>(
+      path: Path,
+      resolver?: Resolver<
+         Message,
+         ValidationSchema,
+         "POST",
+         UserTokenSchema,
+         Path
+      >,
       opts?: RequestOptions<Message, ValidationSchema, KnownRoles>,
    ) {
       this.addRoute({
@@ -254,9 +268,15 @@ export class Brisk<
       })
    }
 
-   public put<ValidationSchema extends ZodSchema<any>>(
-      path: string,
-      resolver?: Resolver<Message, ValidationSchema, "PUT", UserTokenSchema>,
+   public put<ValidationSchema extends ZodSchema<any>, Path extends string>(
+      path: Path,
+      resolver?: Resolver<
+         Message,
+         ValidationSchema,
+         "PUT",
+         UserTokenSchema,
+         Path
+      >,
       opts?: RequestOptions<Message, ValidationSchema, KnownRoles>,
    ) {
       this.addRoute({
@@ -267,9 +287,15 @@ export class Brisk<
       })
    }
 
-   public patch<ValidationSchema extends ZodSchema<any>>(
-      path: string,
-      resolver?: Resolver<Message, ValidationSchema, "PATCH", UserTokenSchema>,
+   public patch<ValidationSchema extends ZodSchema<any>, Path extends string>(
+      path: Path,
+      resolver?: Resolver<
+         Message,
+         ValidationSchema,
+         "PATCH",
+         UserTokenSchema,
+         Path
+      >,
       opts?: RequestOptions<Message, ValidationSchema, KnownRoles>,
    ) {
       this.addRoute({
@@ -280,9 +306,15 @@ export class Brisk<
       })
    }
 
-   public delete<ValidationSchema extends ZodSchema<any>>(
-      path: string,
-      resolver?: Resolver<Message, ValidationSchema, "DELETE", UserTokenSchema>,
+   public delete<ValidationSchema extends ZodSchema<any>, Path extends string>(
+      path: Path,
+      resolver?: Resolver<
+         Message,
+         ValidationSchema,
+         "DELETE",
+         UserTokenSchema,
+         Path
+      >,
       opts?: RequestOptions<Message, ValidationSchema, KnownRoles>,
    ) {
       this.addRoute({
