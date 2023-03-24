@@ -107,7 +107,7 @@ export type ExtendedExpressRequest<
    _RouteType extends RouteType,
    UserTokenSchema extends object | undefined,
    Path extends string,
-> = Omit<ExpressRequest, "body" | "query"> &
+> = Omit<ExpressRequest, "body" | "query" | "params"> &
    ExpressRequestExtension<ValidationSchema, _RouteType, UserTokenSchema, Path>
 
 export type AnyError = new (...args: any[]) => Error
