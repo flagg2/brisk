@@ -1,11 +1,10 @@
 import { NextFunction, Request as ExpressRequest } from "express"
-import { ResponseContent, ResponseSender } from "./Response"
+import { ResponseSender } from "./Response"
 import {
    AnyError,
    ErrorResolver,
    ExtendedExpressResponse,
-   MiddlewareResolver,
-   Resolver,
+   BuiltInMiddlewareResolver,
 } from "./types"
 
 export class Wrappers<Message> {
@@ -19,7 +18,7 @@ export class Wrappers<Message> {
       this.customCatchers = customCatchers
    }
 
-   private catchErrors(fn: MiddlewareResolver<Message>) {
+   private catchErrors(fn: BuiltInMiddlewareResolver<Message>) {
       return async (
          req: ExpressRequest,
          res: ExtendedExpressResponse<Message>,
@@ -38,54 +37,9 @@ export class Wrappers<Message> {
       }
    }
 
-   private attachResponseMethods(
-      fn: MiddlewareResolver<Message>,
-   ): MiddlewareResolver<Message> {
-      return (
-         req: ExpressRequest,
-         res: ExtendedExpressResponse<Message>,
-         next: NextFunction,
-      ) => {
-         res.ok = (message: Message, data?: any) => {
-            return this.responseGenerator.ok(res, message, data)
-         }
-         res.badRequest = (message: Message, data?: any) => {
-            return this.responseGenerator.badRequest(res, message, data)
-         }
-         res.unauthorized = (message?: Message, data?: any) => {
-            return this.responseGenerator.unauthorized(res, message, data)
-         }
-         res.forbidden = (message?: Message, data?: any) => {
-            return this.responseGenerator.forbidden(res, message, data)
-         }
-         res.notFound = (message?: Message, data?: any) => {
-            return this.responseGenerator.notFound(res, message, data)
-         }
-         res.conflict = (message?: Message, data?: any) => {
-            return this.responseGenerator.conflict(res, message, data)
-         }
-         res.internalServerError = (message?: Message, data?: any) => {
-            return this.responseGenerator.internalServerError(
-               res,
-               message,
-               data,
-            )
-         }
-         res.notImplemented = (message?: Message, data?: any) => {
-            return this.responseGenerator.notImplemented(res, message, data)
-         }
-         res.tooManyRequests = (message?: Message, data?: any) => {
-            return this.responseGenerator.tooManyRequests(res, message, data)
-         }
-         res.respondWith = (content: ResponseContent<Message>) => {
-            return this.responseGenerator.respondWith(res, content)
-         }
-         return fn(req, res, next)
-      }
-   }
-
-   public wrapRoute(resolvers: MiddlewareResolver<Message>[]) {
-      resolvers[0] = this.attachResponseMethods(resolvers[0])
+   public wrapWithErrorCatchers(
+      resolvers: BuiltInMiddlewareResolver<Message>[],
+   ) {
       resolvers = resolvers.map((resolver) => this.catchErrors(resolver))
       return resolvers
    }

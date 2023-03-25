@@ -8,7 +8,7 @@ import {
    AnyError,
    CustomMiddlewareResolver,
    ErrorResolver,
-   MiddlewareResolver,
+   BuiltInMiddlewareResolver,
    Resolver,
    RolesResolver,
    RouteType,
@@ -73,7 +73,7 @@ type RequestOptions<
       [key: string]: Role
    },
 > = {
-   middlewares?: MiddlewareResolver<Message>[]
+   middlewares?: BuiltInMiddlewareResolver<Message>[]
    allowedRoles?: KnownRoles[keyof KnownRoles][]
    allowDuplicateRequests?: boolean
    validation?: ValidationOptions<ValidationSchema>
@@ -154,6 +154,7 @@ export class Brisk<
       )
 
       for (const resolver of this.resolvers.getServerCreationMiddlewares()) {
+         // @ts-expect-error
          this.app.use(resolver)
       }
    }
@@ -229,11 +230,11 @@ export class Brisk<
          allowDuplicateRequests ?? null,
          validation ?? null,
       )
-      let finalResolvers = this.wrappers.wrapRoute([
+      let finalResolvers = this.wrappers.wrapWithErrorCatchers([
          ...generatedMiddlewares,
          ...(middlewares ?? []),
          resolver ?? this.resolvers.static.notImplemented,
-      ] as MiddlewareResolver<Message>[])
+      ] as BuiltInMiddlewareResolver<Message>[])
 
       // @ts-ignore
       this.router[type.toLowerCase()](path, finalResolvers)

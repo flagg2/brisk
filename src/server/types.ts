@@ -32,12 +32,12 @@ export type CustomMiddlewareResolver<
    UserTokenSchema extends object | undefined,
    Path extends string,
 > = (
-   req: ExtendedExpressRequest<null, "POST", UserTokenSchema, Path>,
+   req: ExtendedExpressRequest<null, "MIDDLEWARE", UserTokenSchema, Path>,
    res: ExtendedExpressResponse<Message>,
    next: NextFunction,
 ) => Promise<RouteResponse<Message>> | RouteResponse<Message> | void
 
-export type MiddlewareResolver<Message> = (
+export type BuiltInMiddlewareResolver<Message> = (
    req: ExpressRequest,
    res: ExtendedExpressResponse<Message>,
    next: NextFunction,
@@ -123,7 +123,14 @@ export type ExtendedExpressRequest<
 
 export type AnyError = new (...args: any[]) => Error
 
-export type RouteType = "GET" | "POST" | "PUT" | "DELETE" | "PATCH" | "OPTIONS"
+export type RouteType =
+   | "GET"
+   | "POST"
+   | "PUT"
+   | "DELETE"
+   | "PATCH"
+   | "OPTIONS"
+   | "MIDDLEWARE"
 
 export type RolesResolver<UserTokenSchema extends object | undefined> =
    UserTokenSchema extends undefined

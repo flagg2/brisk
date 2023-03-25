@@ -5,11 +5,11 @@ import { hrtime } from "process"
 import {
    ExtendedExpressRequest,
    ExtendedExpressResponse,
-   MiddlewareResolver,
+   BuiltInMiddlewareResolver,
    RouteType,
    ValidationOptions,
 } from "./types"
-import { ResponseSender } from "./Response"
+import { ResponseContent, ResponseSender } from "./Response"
 import helmet from "helmet"
 import { ZodSchema, ZodObject } from "zod"
 import express from "express"
@@ -63,7 +63,11 @@ export class Resolvers<
    }
 
    public static = {
-      logRequest: async (req: Request, res: Response, next: NextFunction) => {
+      logRequest: async (
+         req: Request,
+         res: ExtendedExpressResponse<Message>,
+         next: NextFunction,
+      ) => {
          const start = hrtime()
 
          next()
@@ -83,17 +87,25 @@ export class Resolvers<
             })
          })
       },
-      notImplemented: (_: Request, res: Response) => {
+      notImplemented: (_: Request, res: ExtendedExpressResponse<Message>) => {
          return this.response.notImplemented(res)
       },
       helmet: helmet(),
       json: express.json(),
       urlencoded: express.urlencoded({ extended: true }),
       cors: cors(),
-      blank: (_: Request, res: Response, next: NextFunction) => {
+      blank: (
+         _: Request,
+         res: ExtendedExpressResponse<Message>,
+         next: NextFunction,
+      ) => {
          next()
       },
-      keepRawBody: (req: Request, res: Response, next: NextFunction) => {
+      keepRawBody: (
+         req: Request,
+         res: ExtendedExpressResponse<Message>,
+         next: NextFunction,
+      ) => {
          let request = req as Request & {
             rawBody: string
          }
@@ -104,10 +116,52 @@ export class Resolvers<
 
          next()
       },
+      attachResponseMethods: (
+         req: Request,
+         res: ExtendedExpressResponse<Message>,
+         next: NextFunction,
+      ) => {
+         res.ok = (message: Message, data?: any) => {
+            return this.response.ok(res, message, data)
+         }
+         res.badRequest = (message: Message, data?: any) => {
+            return this.response.badRequest(res, message, data)
+         }
+         res.unauthorized = (message?: Message, data?: any) => {
+            return this.response.unauthorized(res, message, data)
+         }
+         res.forbidden = (message?: Message, data?: any) => {
+            return this.response.forbidden(res, message, data)
+         }
+         res.notFound = (message?: Message, data?: any) => {
+            return this.response.notFound(res, message, data)
+         }
+         res.conflict = (message?: Message, data?: any) => {
+            return this.response.conflict(res, message, data)
+         }
+         res.internalServerError = (message?: Message, data?: any) => {
+            return this.response.internalServerError(res, message, data)
+         }
+         res.notImplemented = (message?: Message, data?: any) => {
+            return this.response.notImplemented(res, message, data)
+         }
+         res.tooManyRequests = (message?: Message, data?: any) => {
+            return this.response.tooManyRequests(res, message, data)
+         }
+         res.respondWith = (content: ResponseContent<Message>) => {
+            return this.response.respondWith(res, content)
+         }
+         res.methodNotAllowed = (message?: Message, data?: any) => {
+            return this.response.methodNotAllowed(res, message, data)
+         }
+
+         next()
+      },
    }
 
    public getServerCreationMiddlewares = () => {
       const middlewares = [
+         this.static.attachResponseMethods,
          this.static.logRequest,
          this.static.keepRawBody,
          this.static.json,
@@ -124,6 +178,7 @@ export class Resolvers<
       allowedMethods: AllowedRouteMethods,
    ) => {
       const middlewares: express.RequestHandler[] = []
+      // @ts-expect-error
       middlewares.push(this.dynamic.validateRouteAndMethod(allowedMethods))
       return middlewares
    }
@@ -133,7 +188,7 @@ export class Resolvers<
       allowDuplicateRequests: boolean | null,
       validation: ValidationOptions<ZodSchema<any>> | null,
    ) {
-      const middlewares: MiddlewareResolver<Message>[] = [
+      const middlewares: BuiltInMiddlewareResolver<Message>[] = [
          //@ts-expect-error - TODO: does not work because of request extension, would be nice to fix later
          this.dynamic.authenticate(allowedRoles),
          this.dynamic.filterDuplicateRequests(allowDuplicateRequests),
@@ -145,7 +200,11 @@ export class Resolvers<
    dynamic = {
       validateSchema:
          (validation: ValidationOptions<ZodSchema<any>> | null) =>
-         (req: Request, res: Response, next: NextFunction) => {
+         (
+            req: Request,
+            res: ExtendedExpressResponse<Message>,
+            next: NextFunction,
+         ) => {
             if (validation == null) {
                return next()
             }
@@ -171,7 +230,11 @@ export class Resolvers<
          },
       validateRouteAndMethod:
          (allowedMethods: AllowedRouteMethods) =>
-         (req: Request, res: Response, next: NextFunction) => {
+         (
+            req: Request,
+            res: ExtendedExpressResponse<Message>,
+            next: NextFunction,
+         ) => {
             // this handles cases in which generic params are used
             // and would not be correctly matched without regex
             const matchingPath = Object.keys(allowedMethods).find((route) =>
@@ -179,7 +242,7 @@ export class Resolvers<
             )
 
             if (matchingPath == null) {
-               return this.response.notFound(res)
+               return res.notFound()
             }
 
             if (
@@ -187,7 +250,7 @@ export class Resolvers<
                   req.method.toUpperCase() as RouteType,
                )
             ) {
-               return this.response.methodNotAllowed(res)
+               return res.methodNotAllowed()
             }
             next()
          },
