@@ -6,7 +6,7 @@ import e, {
 } from "express"
 import { JwtPayload } from "jsonwebtoken"
 import zod, { ZodSchema, ZodObject } from "zod"
-import { Role } from "./Auth"
+import { Role } from "./middlewares/Auth"
 import { ResponseContent } from "./Response"
 
 export type Resolver<
@@ -111,6 +111,7 @@ type ExpressRequestExtension<
       ? undefined
       : Convert<UserTokenSchema> | undefined
    params: ParamsFromPath<Path>
+   parameterizedUrl: string
 }
 
 export type ExtendedExpressRequest<

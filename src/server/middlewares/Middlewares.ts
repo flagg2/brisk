@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from "express"
-import { AllowedRouteMethods, ServerOptions } from "./Brisk"
-import { BriskLogger } from "./Logger"
+import { AllowedRouteMethods, ServerOptions } from "../Brisk"
+import { BriskLogger } from "../Logger"
 import { hrtime } from "process"
 import {
    ExtendedExpressRequest,
@@ -8,8 +8,8 @@ import {
    BuiltInMiddlewareResolver,
    RouteType,
    ValidationOptions,
-} from "./types"
-import { ResponseContent, ResponseSender } from "./Response"
+} from "../types"
+import { ResponseContent, ResponseSender } from "../Response"
 import helmet from "helmet"
 import { ZodSchema, ZodObject } from "zod"
 import express from "express"
@@ -17,6 +17,7 @@ import cors from "cors"
 import { Auth, Role } from "./Auth"
 import { DuplicateRequestFilter } from "./RequestLimiter"
 import { AnyData } from "@flagg2/schema"
+import { Router } from "../Router"
 
 function getRequestSizeKB(req: Request) {
    return Number((req.socket.bytesRead / 1024).toFixed(2))
@@ -35,7 +36,7 @@ function pathToRegex(path: string): string {
    return `^${regexPattern}$`
 }
 
-export class Resolvers<
+export class MiddlewareGenerator<
    Message,
    KnownRoles extends {
       [key: string]: Role
@@ -159,7 +160,7 @@ export class Resolvers<
       },
    }
 
-   public getServerCreationMiddlewares = () => {
+   public getDefaultMiddlewares = () => {
       const middlewares = [
          this.static.attachResponseMethods,
          this.static.logRequest,
@@ -174,16 +175,7 @@ export class Resolvers<
       return middlewares
    }
 
-   public getServerStartUpMiddlewares = (
-      allowedMethods: AllowedRouteMethods,
-   ) => {
-      const middlewares: express.RequestHandler[] = []
-      // @ts-expect-error
-      middlewares.push(this.dynamic.validateRouteAndMethod(allowedMethods))
-      return middlewares
-   }
-
-   public getRouteMiddlewares(
+   public getResolverMiddlewares(
       allowedRoles: KnownRoles[keyof KnownRoles][] | null,
       allowDuplicateRequests: boolean | null,
       validation: ValidationOptions<ZodSchema<any>> | null,
@@ -227,32 +219,6 @@ export class Resolvers<
             } catch (error: any) {
                this.response.validationError(res, undefined, error)
             }
-         },
-      validateRouteAndMethod:
-         (allowedMethods: AllowedRouteMethods) =>
-         (
-            req: Request,
-            res: ExtendedExpressResponse<Message>,
-            next: NextFunction,
-         ) => {
-            // this handles cases in which generic params are used
-            // and would not be correctly matched without regex
-            const matchingPath = Object.keys(allowedMethods).find((route) =>
-               new RegExp(pathToRegex(route)).test(req.path),
-            )
-
-            if (matchingPath == null) {
-               return res.notFound()
-            }
-
-            if (
-               !allowedMethods[matchingPath].includes(
-                  req.method.toUpperCase() as RouteType,
-               )
-            ) {
-               return res.methodNotAllowed()
-            }
-            next()
          },
       authenticate: (allowedRoles: KnownRoles[keyof KnownRoles][] | null) => {
          return this.auth?.getMiddleware(allowedRoles) ?? this.static.blank

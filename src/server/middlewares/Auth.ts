@@ -1,10 +1,10 @@
 import { NextFunction, Request } from "express"
-import { ResponseSender } from "./Response"
+import { ResponseSender } from "../Response"
 import {
    ExtendedExpressRequest,
    ExtendedExpressResponse,
    RolesResolver,
-} from "./types"
+} from "../types"
 import jwt, { JwtPayload } from "jsonwebtoken"
 import { Convert, AnyData } from "@flagg2/schema"
 

@@ -1,5 +1,5 @@
 import { NextFunction, Request } from "express"
-import { ExtendedExpressResponse } from "./types"
+import { ExtendedExpressResponse } from "../types"
 
 class RequestIdentity {
    public ip: string
