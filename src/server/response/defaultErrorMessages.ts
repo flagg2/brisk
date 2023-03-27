@@ -1,5 +1,3 @@
-import { DefaultMessage } from "./Brisk"
-
 export type ErrorMessages<Message> = {
    unauthorized: Message
    forbidden: Message
@@ -12,7 +10,7 @@ export type ErrorMessages<Message> = {
    validationError: Message
 }
 
-export const defaultErrorMessages: ErrorMessages<DefaultMessage> = {
+export const defaultErrorMessages: ErrorMessages<string> = {
    unauthorized:
       "Only logged in users with sufficient permissions can access this content.",
    forbidden: "You do not have sufficient permissions to access this content.",

@@ -3,17 +3,13 @@ import https from "https"
 import http from "http"
 import fs from "fs"
 import { BriskLogger } from "./Logger"
-import { ResponseSender } from "./Response"
+import { ResponseSender } from "./response/ResponseSender"
+import { AnyError, ErrorResolver, RouteType } from "./types"
 import {
-   AnyError,
-   ErrorResolver,
-   RolesResolver,
-   RouteType,
-   ValidationOptions,
-} from "./types"
-import { ErrorMessages, defaultErrorMessages } from "./DefaultErrorMessages"
-import { Auth, Role } from "./middlewares/Auth"
-import { DuplicateRequestFilter } from "./middlewares/RequestLimiter"
+   ErrorMessages,
+   defaultErrorMessages,
+} from "./response/defaultErrorMessages"
+import { AuthConfig, Role } from "./middlewares/auth"
 import { ZodSchema } from "zod"
 import { MiddlewareGenerator } from "./middlewares/Middlewares"
 import { AnyData } from "@flagg2/schema"
@@ -40,20 +36,7 @@ export type ServerOptions<
    //    methods: string;
    //    allowedHeaders: string;
    // };
-   authConfig?:
-      | {
-           signingSecret: string
-           resolverType: "token"
-           rolesResolver: RolesResolver<UserTokenSchema>
-           knownRoles: KnownRoles
-           userTokenSchema: UserTokenSchema
-        }
-      | {
-           resolverType: "request"
-           rolesResolver: RolesResolver<UserTokenSchema>
-           knownRoles: KnownRoles
-        }
-
+   authConfig?: AuthConfig<KnownRoles, UserTokenSchema>
    loggingMethods?: ((message: string) => void)[]
    errorMessageOverrides?: ErrorMessages<Message>
    customCatchers?: Map<AnyError, ErrorResolver<Message>>
@@ -74,13 +57,10 @@ export type RequestOptions<
 > = {
    allowedRoles?: KnownRoles[keyof KnownRoles][]
    allowDuplicateRequests?: boolean
-   validation?: ValidationOptions<ValidationSchema>
+   validation?: ValidationSchema
 }
-
-export type DefaultMessage = string
-
 export class Brisk<
-   Message = DefaultMessage,
+   Message = string,
    KnownRoles extends {
       [key: string]: Role
    } = never,
@@ -98,8 +78,6 @@ export class Brisk<
       UserTokenSchema
    >
    private logger: BriskLogger
-   private auth: Auth<Message, UserTokenSchema> | null = null
-   private duplicateRequestFilter: DuplicateRequestFilter<Message>
 
    constructor(options: ServerOptions<Message, KnownRoles, UserTokenSchema>) {
       this.options = options
@@ -118,35 +96,11 @@ export class Brisk<
             (defaultErrorMessages as ErrorMessages<Message>),
       )
 
-      this.duplicateRequestFilter = new DuplicateRequestFilter<Message>(
-         options.allowDuplicateRequests,
-      )
-      if (options.authConfig) {
-         const { rolesResolver, resolverType } = options.authConfig
-         let signingSecret = ""
-
-         if (resolverType === "token") {
-            signingSecret = options.authConfig.signingSecret
-         }
-
-         this.auth = new Auth<Message, UserTokenSchema>(
-            signingSecret,
-            rolesResolver,
-            resolverType,
-         )
-      }
-
       this.middlewareGen = new MiddlewareGenerator<
          Message,
          KnownRoles,
          UserTokenSchema
-      >(
-         this.options,
-         this.logger,
-         this.responseGen,
-         this.duplicateRequestFilter,
-         this.auth,
-      )
+      >(this.options, this.logger, this.responseGen)
 
       this.router = new Router<Message, KnownRoles, UserTokenSchema>(
          this.app,

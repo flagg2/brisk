@@ -1,6 +1,7 @@
-import { ErrorMessages } from "./DefaultErrorMessages"
-import { RouteResponse } from "./types"
+import { ErrorMessages } from "./defaultErrorMessages"
+import { RouteResponse } from "../types"
 import { Response as ExpressResponse } from "express"
+import { ResponseContent } from "./ResponseContent"
 
 function respond<Message>(
    res: ExpressResponse,
@@ -147,36 +148,4 @@ export class ResponseSender<Message> {
             return this.internalServerError(expressRes, message, data)
       }
    }
-}
-
-type ResponseParams<Message> = {
-   data?: any
-} & (
-   | {
-        status: 200 | 400
-
-        message: Message
-     }
-   | {
-        status: 401 | 403 | 404 | 405 | 409 | 422 | 429 | 500 | 501
-        message?: Message
-     }
-)
-
-export class ResponseContent<Message> {
-   status: number
-   data: any
-   message?: Message
-
-   public constructor(params: ResponseParams<Message>) {
-      this.message = params.message
-      this.data = hasData(params) ? params.data : null
-      this.status = params.status
-   }
-}
-
-function hasData<Message>(
-   params: ResponseParams<Message>,
-): params is ResponseParams<Message> & { data: any } {
-   return params.hasOwnProperty("data")
 }

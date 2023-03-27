@@ -1,39 +1,21 @@
-import { NextFunction, Request, Response } from "express"
-import { AllowedRouteMethods, ServerOptions } from "../Brisk"
+import { NextFunction, Request } from "express"
+import { ServerOptions } from "../Brisk"
 import { BriskLogger } from "../Logger"
 import { hrtime } from "process"
-import {
-   ExtendedExpressRequest,
-   ExtendedExpressResponse,
-   BuiltInMiddlewareResolver,
-   RouteType,
-   ValidationOptions,
-} from "../types"
-import { ResponseContent, ResponseSender } from "../Response"
+import { ExtendedExpressResponse, BuiltInMiddlewareResolver } from "../types"
+import { ResponseSender } from "../response/ResponseSender"
 import helmet from "helmet"
 import { ZodSchema, ZodObject } from "zod"
 import express from "express"
 import cors from "cors"
-import { Auth, Role } from "./Auth"
-import { DuplicateRequestFilter } from "./RequestLimiter"
+import { getAuthMiddleware, Role } from "./auth"
 import { AnyData } from "@flagg2/schema"
 import { Router } from "../Router"
+import { getDuplicateRequestFilterMiddleware } from "./duplicateRequestFilter.ts"
+import { ResponseContent } from "../response/ResponseContent"
 
 function getRequestSizeKB(req: Request) {
    return Number((req.socket.bytesRead / 1024).toFixed(2))
-}
-
-function pathToRegex(path: string): string {
-   const regexPattern = path
-      .split("/")
-      .map((segment) => {
-         if (segment.startsWith(":")) {
-            return ".+"
-         }
-         return segment
-      })
-      .join("\\/")
-   return `^${regexPattern}$`
 }
 
 export class MiddlewareGenerator<
@@ -46,21 +28,15 @@ export class MiddlewareGenerator<
    private options: ServerOptions<Message, KnownRoles, UserTokenSchema>
    private logger: BriskLogger
    private response: ResponseSender<Message>
-   private duplicateRequestFilter: DuplicateRequestFilter<Message>
-   private auth: Auth<Message, UserTokenSchema> | null
 
    constructor(
       options: ServerOptions<Message, KnownRoles, UserTokenSchema>,
       logger: BriskLogger,
       response: ResponseSender<Message>,
-      duplicateRequestFilter: DuplicateRequestFilter<Message>,
-      auth: Auth<Message, UserTokenSchema> | null,
    ) {
       this.options = options
       this.logger = logger
       this.response = response
-      this.duplicateRequestFilter = duplicateRequestFilter
-      this.auth = auth
    }
 
    public static = {
@@ -178,11 +154,12 @@ export class MiddlewareGenerator<
    public getResolverMiddlewares(
       allowedRoles: KnownRoles[keyof KnownRoles][] | null,
       allowDuplicateRequests: boolean | null,
-      validation: ValidationOptions<ZodSchema<any>> | null,
+      validation: ZodSchema<any> | null,
    ) {
       const middlewares: BuiltInMiddlewareResolver<Message>[] = [
          //@ts-expect-error - TODO: does not work because of request extension, would be nice to fix later
          this.dynamic.authenticate(allowedRoles),
+         //@ts-expect-error - TODO: arbitrary type error
          this.dynamic.filterDuplicateRequests(allowDuplicateRequests),
          this.dynamic.validateSchema(validation),
       ]
@@ -191,42 +168,42 @@ export class MiddlewareGenerator<
 
    dynamic = {
       validateSchema:
-         (validation: ValidationOptions<ZodSchema<any>> | null) =>
+         (schema: ZodSchema<any> | null) =>
          (
             req: Request,
             res: ExtendedExpressResponse<Message>,
             next: NextFunction,
          ) => {
-            if (validation == null) {
+            if (schema == null) {
                return next()
-            }
-
-            const { schema, isStrict } = validation
-            function maybeStrictSchema() {
-               if (isStrict !== false && schema instanceof ZodObject) {
-                  return schema.strict()
-               }
-               return schema
             }
 
             try {
                if (req.method === "GET") {
-                  req.query = maybeStrictSchema().parse(req.query)
+                  req.query = schema.parse(req.query)
                } else {
-                  req.body = maybeStrictSchema().parse(req.body)
+                  req.body = schema.parse(req.body)
                }
                next()
             } catch (error: any) {
                this.response.validationError(res, undefined, error)
             }
          },
+      //TODO: make functions from classes when possible
       authenticate: (allowedRoles: KnownRoles[keyof KnownRoles][] | null) => {
-         return this.auth?.getMiddleware(allowedRoles) ?? this.static.blank
+         const { authConfig } = this.options
+         if (authConfig == null) {
+            return this.static.blank
+         }
+         return getAuthMiddleware(authConfig, allowedRoles)
       },
-      filterDuplicateRequests: (allowDuplicateRequests: boolean | null) => {
-         return this.duplicateRequestFilter.getMiddleware(
-            allowDuplicateRequests,
-         )
+      filterDuplicateRequests: (
+         router: Router<Message, KnownRoles, UserTokenSchema>,
+      ) => {
+         if (this.options.allowDuplicateRequests) {
+            return this.static.blank
+         }
+         return getDuplicateRequestFilterMiddleware(router.getRequests())
       },
    }
 }

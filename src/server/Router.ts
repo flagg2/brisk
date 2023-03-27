@@ -12,16 +12,15 @@ import {
 import {
    Router as ExpressRouter,
    Application as ExpressApplication,
-   Request as ExpressRequest,
    NextFunction,
 } from "express"
 import { MiddlewareGenerator } from "./middlewares/Middlewares"
-import { Role } from "./middlewares/Auth"
+import { Role } from "./middlewares/auth"
 import { AnyData } from "@flagg2/schema"
-import { ResponseSender } from "./Response"
+import { ResponseSender } from "./response/ResponseSender"
 import { RequestOptions } from "./Brisk"
 import { ZodSchema, ZodTypeDef } from "zod"
-import { pathToRegex, prependSlash } from "./utils"
+import { pathToRegex, prependSlash } from "./utils/path"
 
 // Class that remebers paths of resources and is table to take a user provided path
 // and return (if it exists) the path that matches the user provided path.
@@ -60,6 +59,7 @@ export class Router<
       resolver: CustomMiddlewareResolver<Message, UserTokenSchema, string>
       path: string
    }[] = []
+   private requests = new Set<string>()
 
    public constructor(
       app: ExpressApplication,
@@ -267,6 +267,10 @@ export class Router<
 
    public getRoutingInfo() {
       return this.routingInfo
+   }
+
+   public getRequests() {
+      return this.requests
    }
 
    private getMatchingPath(userPath: string) {

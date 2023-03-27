@@ -4,10 +4,9 @@ import e, {
    Response as ExpressResponse,
    NextFunction,
 } from "express"
-import { JwtPayload } from "jsonwebtoken"
-import zod, { ZodSchema, ZodObject } from "zod"
-import { Role } from "./middlewares/Auth"
-import { ResponseContent } from "./Response"
+import zod, { ZodSchema } from "zod"
+import { Role } from "./middlewares/auth"
+import { ResponseContent } from "./response/ResponseContent"
 
 export type Resolver<
    Message,
@@ -137,8 +136,3 @@ export type RolesResolver<UserTokenSchema extends object | undefined> =
    UserTokenSchema extends undefined
       ? (req: Request) => Role[]
       : (userToken: Convert<UserTokenSchema>) => Role[]
-
-export type ValidationOptions<ValidationSchema extends ZodSchema<any>> = {
-   schema: ValidationSchema
-   isStrict?: boolean
-}
