@@ -55,7 +55,7 @@ export class MiddlewareGenerator<
       router: Router<any, any, any>,
       allowedRoles?: KnownRoles[keyof KnownRoles][],
       allowDuplicateRequests?: boolean,
-      validation?: ZodSchema<any>,
+      validationSchema?: ZodSchema<any>,
    ) {
       const middlewares: BuiltInMiddlewareResolver<Message>[] = []
 
@@ -66,14 +66,16 @@ export class MiddlewareGenerator<
          ) as BuiltInMiddlewareResolver<Message>,
       )
 
-      if (allowDuplicateRequests) {
+      if (allowDuplicateRequests !== true) {
          middlewares.push(
-            getDuplicateRequestFilterMiddleware(router.getRequests()),
+            getDuplicateRequestFilterMiddleware(
+               router.getRequests.bind(router),
+            ),
          )
       }
 
-      if (validation) {
-         middlewares.push(getSchemaValidationMiddleware(validation))
+      if (validationSchema) {
+         middlewares.push(getSchemaValidationMiddleware(validationSchema))
       }
 
       return middlewares

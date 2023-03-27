@@ -21,13 +21,15 @@ function shouldAllowRequest(
 }
 
 export function getDuplicateRequestFilterMiddleware<Message>(
-   requests: Set<string>,
+   getRequests: () => Set<string>,
 ): BuiltInMiddlewareResolver<Message> {
    return (
       req: ExpressRequest,
       res: ExtendedExpressResponse<Message>,
       next: NextFunction,
    ) => {
+      console.log("getDuplicateRequestFilterMiddleware")
+      const requests = getRequests()
       if (
          req.method === "OPTIONS" ||
          req.method === "HEAD" ||
@@ -45,7 +47,7 @@ export function getDuplicateRequestFilterMiddleware<Message>(
          //TODO: fix send config defined error message
          return res.tooManyRequests(
             // @ts-ignore
-            "Too Many Requests",
+            "Too many requests",
          )
       }
       requests.add(requestIdentityToString(requestIdentity))
