@@ -90,6 +90,7 @@ export class Router<
       this.app.use("/", this.router)
    }
 
+   //TODO: move to middlewares
    private getRoutingMiddleware() {
       return (
          req: ExtendedExpressRequest<any, any, any, any>,
@@ -136,7 +137,11 @@ export class Router<
       // }
 
       let { type, path, resolver, opts } = config
-      const { allowedRoles, allowDuplicateRequests, validation } = opts ?? {}
+      const {
+         allowedRoles,
+         allowDuplicateRequests,
+         validationSchema: validation,
+      } = opts ?? {}
 
       path = prependSlash(path) as Path
 
@@ -151,7 +156,7 @@ export class Router<
          validation,
       )
 
-      let finalResolvers = [resolverOrNotImplemented, ...generatedMiddlewares]
+      let finalResolvers = [...generatedMiddlewares, resolverOrNotImplemented]
       let wrappedResolvers = finalResolvers.map((_resolver) =>
          this.catchErrorsWithin(_resolver),
       )

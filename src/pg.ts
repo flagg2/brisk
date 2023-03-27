@@ -1,5 +1,6 @@
-import { Brisk, Role, ResponseContent, createResponseContent } from "./index"
+import { Brisk, Role, createResponseContent } from "./index"
 import schema from "@flagg2/schema"
+import { z } from "zod"
 
 const test = new Role("test", "test")
 
@@ -20,6 +21,8 @@ const server = new Brisk({
 
 const router = server.getRouter()
 
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+
 router.use("/", (req, res, next) => {
    console.log("middleware")
    next()
@@ -27,11 +30,16 @@ router.use("/", (req, res, next) => {
 
 router.post(
    "/:id/:kokot",
-   (req, res) => {
+   async (req, res) => {
       const response = responseIsGeneratedHere()
+      await sleep(1000)
       return res.respondWith(response)
    },
-   {},
+   {
+      validationSchema: z.object({
+         id: z.string(),
+      }),
+   },
 )
 
 function responseIsGeneratedHere() {

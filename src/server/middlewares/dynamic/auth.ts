@@ -47,7 +47,7 @@ export function getAuthMiddleware<
    },
    UserTokenSchema extends AnyData | undefined,
 >(config: AuthConfig<KnownRoles, UserTokenSchema>, allowedRoles?: Role[]) {
-   const { resolverType, rolesResolver, knownRoles } = config
+   const { resolverType, rolesResolver } = config
    return (
       req: ExtendedExpressRequest<any, any, UserTokenSchema, any>,
       res: ExtendedExpressResponse<Message>,

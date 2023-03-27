@@ -56,7 +56,7 @@ export type RequestOptions<
 > = {
    allowedRoles?: KnownRoles[keyof KnownRoles][]
    allowDuplicateRequests?: boolean
-   validation?: ValidationSchema
+   validationSchema?: ValidationSchema
 }
 export class Brisk<
    Message = string,

@@ -4,7 +4,7 @@ import { BuiltInMiddlewareResolver, ExtendedExpressResponse } from "../../types"
 import { Request as ExpressRequest, NextFunction } from "express"
 
 export function getSchemaValidationMiddleware<Message>(
-   schema: ZodSchema<any>,
+   validationSchema: ZodSchema<any>,
 ): BuiltInMiddlewareResolver<Message> {
    return (
       req: ExpressRequest,
@@ -13,9 +13,9 @@ export function getSchemaValidationMiddleware<Message>(
    ) => {
       try {
          if (req.method === "GET") {
-            req.query = schema.parse(req.query)
+            req.query = validationSchema.parse(req.query)
          } else {
-            req.body = schema.parse(req.body)
+            req.body = validationSchema.parse(req.body)
          }
          next()
       } catch (error: any) {
