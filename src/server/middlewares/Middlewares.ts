@@ -35,8 +35,8 @@ export class MiddlewareGenerator<
       this.responseSender = response
    }
 
-   public getDefaultMiddlewares() {
-      const middlewares = [
+   public getDefaultMiddlewares(): BuiltInMiddlewareResolver<Message>[] {
+      const middlewares: BuiltInMiddlewareResolver<Message>[] = [
          getAttachResponseMethodsMiddleware(this.responseSender),
          getLogRequestMiddleware(this.options.loggingMethods),
          getKeepRawBodyMiddleware(),
