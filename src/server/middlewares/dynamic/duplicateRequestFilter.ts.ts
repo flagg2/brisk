@@ -1,5 +1,5 @@
 import { NextFunction, Request as ExpressRequest } from "express"
-import { ExtendedExpressResponse } from "../types"
+import { BuiltInMiddlewareResolver, ExtendedExpressResponse } from "../../types"
 
 export type RequestIdentity = {
    ip: string
@@ -22,7 +22,7 @@ function shouldAllowRequest(
 
 export function getDuplicateRequestFilterMiddleware<Message>(
    requests: Set<string>,
-) {
+): BuiltInMiddlewareResolver<Message> {
    return (
       req: ExpressRequest,
       res: ExtendedExpressResponse<Message>,
@@ -43,12 +43,10 @@ export function getDuplicateRequestFilterMiddleware<Message>(
       }
       if (!shouldAllowRequest(requestIdentity, requests)) {
          //TODO: fix send config defined error message
-         return res.status(429).send({
-            message: "Too Many Requests",
-            data: {
-               requestIdentity,
-            },
-         })
+         return res.tooManyRequests(
+            // @ts-ignore
+            "Too Many Requests",
+         )
       }
       requests.add(requestIdentityToString(requestIdentity))
       res.on("finish", () => {

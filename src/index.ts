@@ -1,5 +1,8 @@
-import { Role } from "./server/middlewares/auth"
+import { Role } from "./server/middlewares/dynamic/auth"
 import { Brisk } from "./server/Brisk"
-import { ResponseContent } from "./server/response/ResponseSender"
+import {
+   ResponseContent,
+   createResponseContent,
+} from "./server/response/responseContent"
 
-export { Role, Brisk, ResponseContent }
+export { Role, Brisk, ResponseContent, createResponseContent }

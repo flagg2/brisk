@@ -15,12 +15,13 @@ import {
    NextFunction,
 } from "express"
 import { MiddlewareGenerator } from "./middlewares/Middlewares"
-import { Role } from "./middlewares/auth"
 import { AnyData } from "@flagg2/schema"
 import { ResponseSender } from "./response/ResponseSender"
 import { RequestOptions } from "./Brisk"
 import { ZodSchema, ZodTypeDef } from "zod"
 import { pathToRegex, prependSlash } from "./utils/path"
+import { getNotImplementedMiddleware } from "./middlewares/static"
+import { Role } from "./middlewares/dynamic/auth"
 
 // Class that remebers paths of resources and is table to take a user provided path
 // and return (if it exists) the path that matches the user provided path.
@@ -140,20 +141,20 @@ export class Router<
 
       path = prependSlash(path) as Path
 
-      if (resolver == null) {
-         resolver = this.middlewareGen.static.notImplemented
-      }
+      const resolverOrNotImplemented = resolver ?? getNotImplementedMiddleware()
 
-      this.addToPath(path, { type, resolver, opts })
+      this.addToPath(path, { type, resolver: resolverOrNotImplemented, opts })
 
       let generatedMiddlewares = this.middlewareGen.getResolverMiddlewares(
-         allowedRoles ?? null,
-         allowDuplicateRequests ?? null,
-         validation ?? null,
+         this,
+         allowedRoles,
+         allowDuplicateRequests,
+         validation,
       )
-      let finalResolvers = [resolver, ...generatedMiddlewares]
-      let wrappedResolvers = finalResolvers.map((resolver) =>
-         this.catchErrorsWithin(resolver),
+
+      let finalResolvers = [resolverOrNotImplemented, ...generatedMiddlewares]
+      let wrappedResolvers = finalResolvers.map((_resolver) =>
+         this.catchErrorsWithin(_resolver),
       )
 
       // @ts-ignore

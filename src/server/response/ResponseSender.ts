@@ -1,7 +1,7 @@
 import { ErrorMessages } from "./defaultErrorMessages"
 import { RouteResponse } from "../types"
 import { Response as ExpressResponse } from "express"
-import { ResponseContent } from "./ResponseContent"
+import { ResponseContent } from "./responseContent"
 
 function respond<Message>(
    res: ExpressResponse,

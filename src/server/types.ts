@@ -5,8 +5,8 @@ import e, {
    NextFunction,
 } from "express"
 import zod, { ZodSchema } from "zod"
-import { Role } from "./middlewares/auth"
-import { ResponseContent } from "./response/ResponseContent"
+import { Role } from "./middlewares/dynamic/auth"
+import { ResponseContent } from "./response/responseContent"
 
 export type Resolver<
    Message,
@@ -71,6 +71,7 @@ type ExpressResponseExtension<Message> = {
    notFound: ResponseFunction<Message, false>
    conflict: ResponseFunction<Message, false>
    methodNotAllowed: ResponseFunction<Message, false>
+   validationError: ResponseFunction<Message, true>
    internalServerError: ResponseFunction<Message, false>
    notImplemented: ResponseFunction<Message, false>
    tooManyRequests: ResponseFunction<Message, false>

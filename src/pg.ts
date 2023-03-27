@@ -1,43 +1,45 @@
-// import { Brisk, Role, ResponseContent } from "./index"
-// import schema from "@flagg2/schema"
+import { Brisk, Role, ResponseContent, createResponseContent } from "./index"
+import schema from "@flagg2/schema"
 
-// const test = new Role("test", "test")
+const test = new Role("test", "test")
 
-// const server = new Brisk({
-//    port: 3000,
-//    authConfig: {
-//       knownRoles: { test },
-//       resolverType: "token",
-//       signingSecret: "secret",
-//       userTokenSchema: schema.object({
-//          id: schema.string(),
-//       }),
-//       rolesResolver: () => {
-//          return [test]
-//       },
-//    },
-// })
+const server = new Brisk({
+   port: 3000,
+   authConfig: {
+      knownRoles: { test },
+      resolverType: "token",
+      signingSecret: "secret",
+      userTokenSchema: schema.object({
+         id: schema.string(),
+      }),
+      rolesResolver: () => {
+         return [test]
+      },
+   },
+})
 
-// server.use("/", (req, res, next) => {
-//    console.log("middleware")
-//    return res.conflict()
-// })
+const router = server.getRouter()
 
-// server.post(
-//    "/:id/:kokot",
-//    (req, res) => {
-//       const response = responseIsGeneratedHere()
-//       return res.respondWith(response)
-//    },
-//    {},
-// )
+router.use("/", (req, res, next) => {
+   console.log("middleware")
+   return res.conflict()
+})
 
-// function responseIsGeneratedHere() {
-//    return new ResponseContent({
-//       status: 400,
-//       message: "ok",
-//       data: "nieco sa dojebalo",
-//    })
-// }
+router.post(
+   "/:id/:kokot",
+   (req, res) => {
+      const response = responseIsGeneratedHere()
+      return res.respondWith(response)
+   },
+   {},
+)
 
-// server.start()
+function responseIsGeneratedHere() {
+   return createResponseContent({
+      status: 400,
+      message: "ok",
+      data: "nieco sa dojebalo",
+   })
+}
+
+server.start()

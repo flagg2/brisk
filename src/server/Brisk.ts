@@ -2,18 +2,17 @@ import express, { Application } from "express"
 import https from "https"
 import http from "http"
 import fs from "fs"
-import { BriskLogger } from "./Logger"
 import { ResponseSender } from "./response/ResponseSender"
 import { AnyError, ErrorResolver, RouteType } from "./types"
 import {
    ErrorMessages,
    defaultErrorMessages,
 } from "./response/defaultErrorMessages"
-import { AuthConfig, Role } from "./middlewares/auth"
 import { ZodSchema } from "zod"
 import { MiddlewareGenerator } from "./middlewares/Middlewares"
 import { AnyData } from "@flagg2/schema"
 import { Router } from "./Router"
+import { AuthConfig, Role } from "./middlewares/dynamic/auth"
 
 // TODO: move params that only router needs to router
 
@@ -77,19 +76,12 @@ export class Brisk<
       KnownRoles,
       UserTokenSchema
    >
-   private logger: BriskLogger
 
    constructor(options: ServerOptions<Message, KnownRoles, UserTokenSchema>) {
       this.options = options
       this.roles = options.authConfig?.knownRoles ?? ({} as KnownRoles)
 
       this.app = express()
-
-      this.logger = new BriskLogger({
-         loggingMethods: options.loggingMethods ?? [
-            (message: string) => console.log(message),
-         ],
-      })
 
       this.responseGen = new ResponseSender<Message>(
          options.errorMessageOverrides ??
@@ -100,7 +92,7 @@ export class Brisk<
          Message,
          KnownRoles,
          UserTokenSchema
-      >(this.options, this.logger, this.responseGen)
+      >(this.options, this.responseGen)
 
       this.router = new Router<Message, KnownRoles, UserTokenSchema>(
          this.app,
