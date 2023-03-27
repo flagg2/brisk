@@ -1,11 +1,11 @@
 import { NextFunction } from "express"
+import jwt from "jsonwebtoken"
+import { Convert, AnyData } from "@flagg2/schema"
 import {
    ExtendedExpressRequest,
    ExtendedExpressResponse,
    RolesResolver,
-} from "../types"
-import jwt from "jsonwebtoken"
-import { Convert, AnyData } from "@flagg2/schema"
+} from "../../types"
 
 export type AuthConfig<
    KnownRoles extends {
@@ -46,10 +46,7 @@ export function getAuthMiddleware<
       [key: string]: Role
    },
    UserTokenSchema extends AnyData | undefined,
->(
-   config: AuthConfig<KnownRoles, UserTokenSchema>,
-   allowedRoles: Role[] | null,
-) {
+>(config: AuthConfig<KnownRoles, UserTokenSchema>, allowedRoles?: Role[]) {
    const { resolverType, rolesResolver, knownRoles } = config
    return (
       req: ExtendedExpressRequest<any, any, UserTokenSchema, any>,
@@ -81,8 +78,10 @@ export function getAuthMiddleware<
          if (!decodedToken && allowedRoles != null) {
             return res.unauthorized()
          }
-         // @ts-ignore
-         req.user = decodedToken
+
+         req.user = decodedToken as UserTokenSchema extends undefined
+            ? undefined
+            : Convert<UserTokenSchema, false> | undefined
       }
 
       if (allowedRoles == null) {

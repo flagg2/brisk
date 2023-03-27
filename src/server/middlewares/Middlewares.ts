@@ -59,11 +59,12 @@ export class MiddlewareGenerator<
    ) {
       const middlewares: BuiltInMiddlewareResolver<Message>[] = []
 
-      if (allowedRoles) {
-         middlewares.push(
-            getAuthMiddleware(this.options.authConfig!, allowedRoles),
-         )
-      }
+      middlewares.push(
+         getAuthMiddleware(
+            this.options.authConfig!,
+            allowedRoles,
+         ) as BuiltInMiddlewareResolver<Message>,
+      )
 
       if (allowDuplicateRequests) {
          middlewares.push(
@@ -78,5 +79,3 @@ export class MiddlewareGenerator<
       return middlewares
    }
 }
-
-//TODO: potentially only allow object and array in validation shcema

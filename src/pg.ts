@@ -22,7 +22,7 @@ const router = server.getRouter()
 
 router.use("/", (req, res, next) => {
    console.log("middleware")
-   return res.conflict()
+   next()
 })
 
 router.post(

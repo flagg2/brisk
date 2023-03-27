@@ -22,6 +22,7 @@ import { ZodSchema, ZodTypeDef } from "zod"
 import { pathToRegex, prependSlash } from "./utils/path"
 import { getNotImplementedMiddleware } from "./middlewares/static"
 import { Role } from "./middlewares/dynamic/auth"
+import { addAppResolver, addRouterResolvers } from "./utils/castAndUse"
 
 // Class that remebers paths of resources and is table to take a user provided path
 // and return (if it exists) the path that matches the user provided path.
@@ -73,22 +74,20 @@ export class Router<
       this.middlewareGen = middlewareGen
       this.responseGenerator = responseGen
       this.customCatchers = customCatchers
+
       for (const resolver of this.middlewareGen.getDefaultMiddlewares()) {
-         // @ts-expect-error TODO:
-         this.app.use(resolver)
+         addAppResolver(app, resolver)
       }
    }
 
    public start() {
-      this.app.use("/", this.router)
-
-      // @ts-expect-error TODO:
-      this.app.use(this.getRoutingMiddleware())
+      addAppResolver(this.app, this.getRoutingMiddleware())
 
       for (const { path, resolver } of this.middlewares) {
-         // @ts-expect-error TODO:
-         this.app.use(path, resolver)
+         addAppResolver(this.app, resolver)
       }
+
+      this.app.use("/", this.router)
    }
 
    private getRoutingMiddleware() {
@@ -157,8 +156,12 @@ export class Router<
          this.catchErrorsWithin(_resolver),
       )
 
-      // @ts-ignore
-      this.router[type.toLowerCase()](path, wrappedResolvers)
+      addRouterResolvers(
+         this.router,
+         type.toLowerCase() as RouteType,
+         path,
+         wrappedResolvers,
+      )
    }
 
    public get<ValidationSchema extends ZodSchema<any>, Path extends string>(

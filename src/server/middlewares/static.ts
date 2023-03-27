@@ -7,7 +7,7 @@ import {
 import cors from "cors"
 import helmet from "helmet"
 import { hrtime } from "process"
-import { logRequest } from "../Logger"
+import { logRequest } from "../logRequest"
 import { BuiltInMiddlewareResolver, ExtendedExpressResponse } from "../types"
 import { ResponseSender } from "../response/ResponseSender"
 import { ResponseContent } from "../response/responseContent"
@@ -62,15 +62,15 @@ export function getHelmetMiddleware<
    return helmet()
 }
 
-export async function getJsonMiddleware<Message>(): Promise<
-   BuiltInMiddlewareResolver<Message>
-> {
+export function getJsonMiddleware<
+   Message,
+>(): BuiltInMiddlewareResolver<Message> {
    return json()
 }
 
-export async function getUrlencodedMiddleware<Message>(): Promise<
-   BuiltInMiddlewareResolver<Message>
-> {
+export function getUrlencodedMiddleware<
+   Message,
+>(): BuiltInMiddlewareResolver<Message> {
    return urlencoded({ extended: true })
 }
 
@@ -156,5 +156,7 @@ export function getAttachResponseMethodsMiddleware<Message>(
       res.validationError = (message?: Message, data?: any) => {
          return responseSender.validationError(res, message, data)
       }
+
+      next()
    }
 }
