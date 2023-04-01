@@ -135,5 +135,5 @@ export type RouteType =
 
 export type RolesResolver<UserTokenSchema extends object | undefined> =
    UserTokenSchema extends undefined
-      ? (req: Request) => Role[]
+      ? (req: ExpressRequest) => Role[]
       : (userToken: Convert<UserTokenSchema>) => Role[]

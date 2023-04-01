@@ -1,11 +1,13 @@
-import { NextFunction } from "express"
-import jwt from "jsonwebtoken"
+import { NextFunction, Request as ExpressRequest } from "express"
+import jwt, { TokenExpiredError } from "jsonwebtoken"
 import { Convert, AnyData } from "@flagg2/schema"
 import {
    ExtendedExpressRequest,
    ExtendedExpressResponse,
    RolesResolver,
 } from "../../types"
+import assert from "assert"
+import { createResponseContent } from "../../response/responseContent"
 
 export type AuthConfig<
    KnownRoles extends {
@@ -38,7 +40,154 @@ export class Role {
    constructor(public name: string, public description: string) {}
 }
 
+function decodeAndVerifyToken<UserTokenSchema extends AnyData | undefined>(
+   extractedToken: string,
+   signingSecret: string,
+) {
+   try {
+      const decodedToken = jwt.verify(
+         extractedToken,
+         signingSecret,
+      ) as Convert<UserTokenSchema>
+      return {
+         decodedToken,
+         response: null,
+      }
+   } catch (e) {
+      if (e instanceof TokenExpiredError) {
+         return {
+            decodedToken: null,
+            response: createResponseContent({
+               status: 401,
+               message: "Token expired",
+            }),
+         }
+      }
+      return {
+         decodedToken: null,
+         response: createResponseContent({
+            status: 401,
+            message: "Invalid token",
+         }),
+      }
+   }
+}
+
+function extractToken(req: ExtendedExpressRequest<any, any, any, any>) {
+   const token = req.headers["Authorization"] ?? req.headers["authorization"]
+   if (typeof token !== "string") {
+      return null
+   }
+   return extractBearerToken(token)
+}
+
+function getTokenResolver<
+   UserTokenSchema extends AnyData | undefined,
+   KnownRoles extends {
+      [key: string]: Role
+   },
+>(config: AuthConfig<KnownRoles, UserTokenSchema>, allowedRoles?: Role[]) {
+   assert(config.resolverType === "token")
+   return (
+      req: ExtendedExpressRequest<any, any, UserTokenSchema, any>,
+      res: ExtendedExpressResponse<any>,
+      next: NextFunction,
+   ) => {
+      const { signingSecret } = config
+
+      const extractedToken = extractToken(req)
+
+      if (extractedToken == null) {
+         if (allowedRoles != null) {
+            return res.unauthorized("No token provided")
+         }
+         return next()
+      }
+
+      const { decodedToken, response } = decodeAndVerifyToken(
+         extractedToken,
+         signingSecret,
+      )
+      if (response != null) {
+         return res.respondWith(response)
+      }
+
+      req.user = decodedToken as UserTokenSchema extends undefined
+         ? undefined
+         : Convert<UserTokenSchema, false> | undefined
+
+      const { response: roleResponse } = resolveAndMatchRoles(
+         config.rolesResolver,
+         decodedToken,
+         allowedRoles,
+      )
+
+      if (roleResponse != null) {
+         return res.respondWith(roleResponse)
+      }
+
+      next()
+   }
+}
+
+function getRequestResolver<
+   UserTokenSchema extends AnyData | undefined,
+   KnownRoles extends {
+      [key: string]: Role
+   },
+>(config: AuthConfig<KnownRoles, UserTokenSchema>, allowedRoles?: Role[]) {
+   assert(config.resolverType === "request")
+   return (
+      req: ExtendedExpressRequest<any, any, UserTokenSchema, any>,
+      res: ExtendedExpressResponse<any>,
+      next: NextFunction,
+   ) => {
+      const { response } = resolveAndMatchRoles(
+         config.rolesResolver,
+         req as ExpressRequest,
+         allowedRoles,
+      )
+
+      if (response != null) {
+         return res.respondWith(response)
+      }
+
+      next()
+   }
+}
+
 //TODO: check correctness of this
+
+function resolveAndMatchRoles<UserTokenSchema extends AnyData | undefined>(
+   resolver: RolesResolver<UserTokenSchema>,
+   resolverData: Convert<UserTokenSchema, false> | ExpressRequest,
+   allowedRoles?: Role[],
+) {
+   if (allowedRoles === undefined) {
+      return {
+         ok: true,
+         response: null,
+      }
+   }
+
+   //@ts-ignore TODO: fix this
+   const roles = resolver(resolverData)
+
+   if (!roles.some((role) => allowedRoles.includes(role))) {
+      return {
+         ok: false,
+         response: createResponseContent({
+            status: 403,
+            message: "Forbidden",
+         }),
+      }
+   }
+
+   return {
+      ok: true,
+      response: null,
+   }
+}
 
 export function getAuthMiddleware<
    Message,
@@ -47,57 +196,17 @@ export function getAuthMiddleware<
    },
    UserTokenSchema extends AnyData | undefined,
 >(config: AuthConfig<KnownRoles, UserTokenSchema>, allowedRoles?: Role[]) {
-   const { resolverType, rolesResolver } = config
+   const { resolverType } = config
    return (
       req: ExtendedExpressRequest<any, any, UserTokenSchema, any>,
       res: ExtendedExpressResponse<Message>,
       next: NextFunction,
    ) => {
-      let decodedToken: Convert<UserTokenSchema> | undefined
-      if (resolverType === "token") {
-         const signingSecret = config.signingSecret
-         const token =
-            String(req.headers["Authorization"]) ||
-            String(req.headers["authorization"])
-         if (!token && allowedRoles != null) {
-            return res.unauthorized()
-         }
-
-         try {
-            const extractedToken = extractBearerToken(token)
-            decodedToken = jwt.verify(
-               extractedToken,
-               signingSecret,
-            ) as Convert<UserTokenSchema>
-         } catch (e) {
-            if (allowedRoles != null) {
-               return res.unauthorized()
-            }
-         }
-
-         if (!decodedToken && allowedRoles != null) {
-            return res.unauthorized()
-         }
-
-         req.user = decodedToken as UserTokenSchema extends undefined
-            ? undefined
-            : Convert<UserTokenSchema, false> | undefined
+      switch (resolverType) {
+         case "token":
+            return getTokenResolver(config, allowedRoles)(req, res, next)
+         case "request":
+            return getRequestResolver(config, allowedRoles)(req, res, next)
       }
-
-      if (allowedRoles == null) {
-         return next()
-      }
-
-      // @ts-ignore
-      const roles = rolesResolver(decodedToken ?? req)
-
-      if (!roles.some((role) => allowedRoles.includes(role))) {
-         return res.forbidden()
-      }
-
-      // TODO: add roles to req, with typing
-      //  req["roles"] = roles;
-
-      next()
    }
 }

@@ -31,6 +31,7 @@ router.use("/", (req, res, next) => {
 router.post(
    "/:id/:kokot",
    async (req, res) => {
+      console.log(req.user)
       const response = responseIsGeneratedHere()
       await sleep(1000)
       return res.respondWith(response)
@@ -39,6 +40,7 @@ router.post(
       validationSchema: z.object({
          id: z.string(),
       }),
+      allowedRoles: [test],
    },
 )
 
