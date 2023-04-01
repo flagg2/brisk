@@ -28,7 +28,11 @@ export type AuthConfig<
         knownRoles: KnownRoles
      }
 
-function extractBearerToken(token: string) {
+export class Role {
+   constructor(public name: string, public description: string) {}
+}
+
+function handleBearerPrefix(token: string) {
    const bearer = "Bearer "
    if (token.startsWith(bearer)) {
       return token.substring(bearer.length)
@@ -36,8 +40,12 @@ function extractBearerToken(token: string) {
    return token
 }
 
-export class Role {
-   constructor(public name: string, public description: string) {}
+function extractToken(req: ExtendedExpressRequest<any, any, any, any>) {
+   const token = req.headers["Authorization"] ?? req.headers["authorization"]
+   if (typeof token !== "string") {
+      return null
+   }
+   return handleBearerPrefix(token)
 }
 
 function decodeAndVerifyToken<UserTokenSchema extends AnyData | undefined>(
@@ -73,14 +81,6 @@ function decodeAndVerifyToken<UserTokenSchema extends AnyData | undefined>(
    }
 }
 
-function extractToken(req: ExtendedExpressRequest<any, any, any, any>) {
-   const token = req.headers["Authorization"] ?? req.headers["authorization"]
-   if (typeof token !== "string") {
-      return null
-   }
-   return extractBearerToken(token)
-}
-
 function getTokenResolver<
    UserTokenSchema extends AnyData | undefined,
    KnownRoles extends {
@@ -108,7 +108,7 @@ function getTokenResolver<
          extractedToken,
          signingSecret,
       )
-      if (response != null) {
+      if (response !== null) {
          return res.respondWith(response)
       }
 
@@ -165,7 +165,7 @@ function resolveAndMatchRoles<UserTokenSchema extends AnyData | undefined>(
 ) {
    if (allowedRoles === undefined) {
       return {
-         ok: true,
+         matched: true,
          response: null,
       }
    }
@@ -175,7 +175,7 @@ function resolveAndMatchRoles<UserTokenSchema extends AnyData | undefined>(
 
    if (!roles.some((role) => allowedRoles.includes(role))) {
       return {
-         ok: false,
+         matched: false,
          response: createResponseContent({
             status: 403,
             message: "Forbidden",
@@ -184,7 +184,7 @@ function resolveAndMatchRoles<UserTokenSchema extends AnyData | undefined>(
    }
 
    return {
-      ok: true,
+      matched: true,
       response: null,
    }
 }
