@@ -1,9 +1,9 @@
 {
    "name": "@flagg2/brisk",
-   "version": "1.1.9",
+   "version": "1.2.9",
    "description": "Brisk is a simple framework for building RESTful APIs based on Express",
    "main": "dist/index.js",
-   "types": "src/index.ts",
+   "types": "dist/index.d.ts",
    "scripts": {
       "start": "node ./dist/index.js",
       "pg": "node ./dist/pg.js",
@@ -14,7 +14,7 @@
    "author": "",
    "license": "ISC",
    "dependencies": {
-      "@flagg2/schema": "^1.0.5",
+      "@flagg2/schema": "1.0.8",
       "@types/cors": "^2.8.13",
       "@types/express": "^4.17.15",
       "@types/jsonwebtoken": "^8.5.9",
