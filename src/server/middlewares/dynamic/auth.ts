@@ -1,11 +1,7 @@
 import { NextFunction, Request as ExpressRequest } from "express"
 import jwt, { TokenExpiredError } from "jsonwebtoken"
 import { Convert, AnyData } from "@flagg2/schema"
-import {
-   ExtendedExpressRequest,
-   ExtendedExpressResponse,
-   RolesResolver,
-} from "../../types"
+import { BriskRequest, BriskResponse, RolesResolver } from "../../types"
 import assert from "assert"
 import { createResponseContent } from "../../response/responseContent"
 
@@ -40,7 +36,7 @@ function handleBearerPrefix(token: string) {
    return token
 }
 
-function extractToken(req: ExtendedExpressRequest<any, any, any, any>) {
+function extractToken(req: BriskRequest<any, any, any, any>) {
    const token = req.headers["Authorization"] ?? req.headers["authorization"]
    if (typeof token !== "string") {
       return null
@@ -89,8 +85,8 @@ function getTokenResolver<
 >(config: AuthConfig<KnownRoles, UserTokenSchema>, allowedRoles?: Role[]) {
    assert(config.resolverType === "token")
    return (
-      req: ExtendedExpressRequest<any, any, UserTokenSchema, any>,
-      res: ExtendedExpressResponse<any>,
+      req: BriskRequest<any, any, UserTokenSchema, any>,
+      res: BriskResponse<any>,
       next: NextFunction,
    ) => {
       const { signingSecret } = config
@@ -138,8 +134,8 @@ function getRequestResolver<
 >(config: AuthConfig<KnownRoles, UserTokenSchema>, allowedRoles?: Role[]) {
    assert(config.resolverType === "request")
    return (
-      req: ExtendedExpressRequest<any, any, UserTokenSchema, any>,
-      res: ExtendedExpressResponse<any>,
+      req: BriskRequest<any, any, UserTokenSchema, any>,
+      res: BriskResponse<any>,
       next: NextFunction,
    ) => {
       const { response } = resolveAndMatchRoles(
@@ -198,8 +194,8 @@ export function getAuthMiddleware<
 >(config: AuthConfig<KnownRoles, UserTokenSchema>, allowedRoles?: Role[]) {
    const { resolverType } = config
    return (
-      req: ExtendedExpressRequest<any, any, UserTokenSchema, any>,
-      res: ExtendedExpressResponse<Message>,
+      req: BriskRequest<any, any, UserTokenSchema, any>,
+      res: BriskResponse<Message>,
       next: NextFunction,
    ) => {
       switch (resolverType) {

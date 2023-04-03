@@ -10,6 +10,7 @@ const server = new Brisk({
       knownRoles: { test },
       resolverType: "token",
       signingSecret: "secret",
+      //TODO: if decoded data does not match schema, throw error
       userTokenSchema: schema.object({
          id: schema.string(),
       }),

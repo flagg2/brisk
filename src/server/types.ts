@@ -8,6 +8,9 @@ import zod, { ZodSchema } from "zod"
 import { Role } from "./middlewares/dynamic/auth"
 import { ResponseContent } from "./response/responseContent"
 
+//TODO: rename where appropriate
+export type BriskNext = NextFunction
+
 export type Resolver<
    Message,
    ValidationSchema extends ZodSchema<any> | null,
@@ -15,13 +18,8 @@ export type Resolver<
    UserTokenSchema extends object | undefined,
    Path extends string,
 > = (
-   req: ExtendedExpressRequest<
-      ValidationSchema,
-      _RouteType,
-      UserTokenSchema,
-      Path
-   >,
-   res: ExtendedExpressResponse<Message>,
+   req: BriskRequest<ValidationSchema, _RouteType, UserTokenSchema, Path>,
+   res: BriskResponse<Message>,
    next?: NextFunction,
 ) => Promise<RouteResponse<Message>> | RouteResponse<Message>
 
@@ -31,20 +29,20 @@ export type CustomMiddlewareResolver<
    UserTokenSchema extends object | undefined,
    Path extends string,
 > = (
-   req: ExtendedExpressRequest<null, "MIDDLEWARE", UserTokenSchema, Path>,
-   res: ExtendedExpressResponse<Message>,
+   req: BriskRequest<null, "MIDDLEWARE", UserTokenSchema, Path>,
+   res: BriskResponse<Message>,
    next: NextFunction,
 ) => Promise<RouteResponse<Message>> | RouteResponse<Message> | void
 
 export type BuiltInMiddlewareResolver<Message> = (
    req: ExpressRequest,
-   res: ExtendedExpressResponse<Message>,
+   res: BriskResponse<Message>,
    next: NextFunction,
 ) => Promise<RouteResponse<Message> | void> | RouteResponse<Message> | void
 
 export type ErrorResolver<Message> = (
    req: ExpressRequest,
-   res: ExtendedExpressResponse<Message>,
+   res: BriskResponse<Message>,
    next: NextFunction | undefined,
    error: Error,
 ) => RouteResponse<Message>
@@ -77,7 +75,7 @@ type ExpressResponseExtension<Message> = {
    tooManyRequests: ResponseFunction<Message, false>
 }
 
-export type ExtendedExpressResponse<Message> = ExpressResponse &
+export type BriskResponse<Message> = ExpressResponse &
    ExpressResponseExtension<Message>
 
 type ExtractParams<S extends string> = S extends `${infer P}/${infer R}`
@@ -114,7 +112,7 @@ type ExpressRequestExtension<
    parameterizedUrl: string
 }
 
-export type ExtendedExpressRequest<
+export type BriskRequest<
    ValidationSchema extends ZodSchema<any> | null,
    _RouteType extends RouteType,
    UserTokenSchema extends object | undefined,

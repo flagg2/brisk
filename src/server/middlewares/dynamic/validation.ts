@@ -1,6 +1,6 @@
 import { ZodSchema } from "zod"
 import { ResponseSender } from "../../response/ResponseSender"
-import { BuiltInMiddlewareResolver, ExtendedExpressResponse } from "../../types"
+import { BuiltInMiddlewareResolver, BriskResponse } from "../../types"
 import { Request as ExpressRequest, NextFunction } from "express"
 
 export function getSchemaValidationMiddleware<Message>(
@@ -8,7 +8,7 @@ export function getSchemaValidationMiddleware<Message>(
 ): BuiltInMiddlewareResolver<Message> {
    return (
       req: ExpressRequest,
-      res: ExtendedExpressResponse<Message>,
+      res: BriskResponse<Message>,
       next: NextFunction,
    ) => {
       try {

@@ -8,7 +8,7 @@ import cors from "cors"
 import helmet from "helmet"
 import { hrtime } from "process"
 import { logRequest } from "../logRequest"
-import { BuiltInMiddlewareResolver, ExtendedExpressResponse } from "../types"
+import { BuiltInMiddlewareResolver, BriskResponse } from "../types"
 import { ResponseSender } from "../response/ResponseSender"
 import { ResponseContent } from "../response/responseContent"
 
@@ -21,7 +21,7 @@ export function getLogRequestMiddleware<Message>(
 ): BuiltInMiddlewareResolver<Message> {
    return (
       req: ExpressRequest,
-      res: ExtendedExpressResponse<Message>,
+      res: BriskResponse<Message>,
       next: NextFunction,
    ) => {
       const start = hrtime()
@@ -51,7 +51,7 @@ export function getLogRequestMiddleware<Message>(
 export function getNotImplementedMiddleware<
    Message,
 >(): BuiltInMiddlewareResolver<Message> {
-   return (_: ExpressRequest, res: ExtendedExpressResponse<Message>) => {
+   return (_: ExpressRequest, res: BriskResponse<Message>) => {
       return res.notImplemented()
    }
 }
@@ -85,7 +85,7 @@ export function getBlankMiddleware<
 >(): BuiltInMiddlewareResolver<Message> {
    return (
       _: ExpressRequest,
-      res: ExtendedExpressResponse<Message>,
+      res: BriskResponse<Message>,
       next: NextFunction,
    ) => {
       next()
@@ -97,7 +97,7 @@ export function getKeepRawBodyMiddleware<
 >(): BuiltInMiddlewareResolver<Message> {
    return (
       req: ExpressRequest,
-      res: ExtendedExpressResponse<Message>,
+      res: BriskResponse<Message>,
       next: NextFunction,
    ) => {
       let request = req as ExpressRequest & {
@@ -117,7 +117,7 @@ export function getAttachResponseMethodsMiddleware<Message>(
 ): BuiltInMiddlewareResolver<Message> {
    return (
       req: ExpressRequest,
-      res: ExtendedExpressResponse<Message>,
+      res: BriskResponse<Message>,
       next: NextFunction,
    ) => {
       res.ok = (message: Message, data?: any) => {

@@ -5,8 +5,8 @@ import {
    BuiltInMiddlewareResolver,
    AnyError,
    ErrorResolver,
-   ExtendedExpressRequest,
-   ExtendedExpressResponse,
+   BriskRequest,
+   BriskResponse,
 } from "./types"
 
 import {
@@ -93,16 +93,22 @@ export class Router<
    //TODO: move to middlewares
    private getRoutingMiddleware() {
       return (
-         req: ExtendedExpressRequest<any, any, any, any>,
-         res: ExtendedExpressResponse<Message>,
+         req: BriskRequest<any, any, any, any>,
+         res: BriskResponse<Message>,
          next: NextFunction,
       ) => {
          const matchingPath = this.getMatchingPath(req.path)
-         if (matchingPath == null) {
+         if (matchingPath === undefined) {
             return res.notFound()
          }
+
+         const routingInfoForPath = this.routingInfo[matchingPath]
+         if (routingInfoForPath === undefined) {
+            return res.notFound()
+         }
+
          if (
-            !this.routingInfo[matchingPath].some(
+            !routingInfoForPath.some(
                (resolver) => resolver.type === req.method.toUpperCase(),
             )
          ) {
@@ -296,7 +302,7 @@ export class Router<
       return async (
          //TODO: type this better
          req: any,
-         res: ExtendedExpressResponse<Message>,
+         res: BriskResponse<Message>,
          next: NextFunction,
       ) => {
          try {

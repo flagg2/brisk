@@ -1,5 +1,5 @@
 import { NextFunction, Request as ExpressRequest } from "express"
-import { BuiltInMiddlewareResolver, ExtendedExpressResponse } from "../../types"
+import { BuiltInMiddlewareResolver, BriskResponse } from "../../types"
 
 export type RequestIdentity = {
    ip: string
@@ -25,7 +25,7 @@ export function getDuplicateRequestFilterMiddleware<Message>(
 ): BuiltInMiddlewareResolver<Message> {
    return (
       req: ExpressRequest,
-      res: ExtendedExpressResponse<Message>,
+      res: BriskResponse<Message>,
       next: NextFunction,
    ) => {
       console.log("getDuplicateRequestFilterMiddleware")
