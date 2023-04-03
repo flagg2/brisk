@@ -10,8 +10,6 @@ import { BriskRequest, BriskResponse, BriskNext } from "./server/types"
 import z from "zod"
 import schema from "@flagg2/schema"
 
-import "@flagg2/schema"
-
 const userSchema = schema
 const us = userSchema
 

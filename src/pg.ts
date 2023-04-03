@@ -1,4 +1,4 @@
-import { Brisk, Role, createResponseContent } from "./index"
+import { Brisk, Role, createResponseContent } from "../dist/index"
 import schema from "@flagg2/schema"
 import { z } from "zod"
 
