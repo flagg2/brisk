@@ -8,6 +8,7 @@
    "scripts": {
       "start": "node ./dist/index.js",
       "pg": "node ./dist/pg.js",
+      "lint": "tsc",
       "build": "tsup src/index.ts --dts --format cjs,esm",
       "release": "pnpm run build && changeset publish"
    },
