@@ -10,7 +10,21 @@ import { hrtime } from "process"
 import { logRequest } from "../logRequest"
 import { BuiltInMiddlewareResolver, BriskResponse } from "../types"
 import { ResponseSender } from "../response/ResponseSender"
-import { ResponseContent } from "../response/responseContent"
+import {
+   ResponseContent,
+   ok,
+   created,
+   badRequest,
+   unauthorized,
+   forbidden,
+   notFound,
+   methodNotAllowed,
+   conflict,
+   unprocessableEntity,
+   tooManyRequests,
+   internalServerError,
+   notImplemented,
+} from "../response/responseContent"
 
 function getRequestSizeKB(req: ExpressRequest) {
    return Number((req.socket.bytesRead / 1024).toFixed(2))
@@ -120,43 +134,66 @@ export function getAttachResponseMethodsMiddleware<Message>(
       res: BriskResponse<Message>,
       next: NextFunction,
    ) => {
-      res.ok = (message: Message, data?: any) => {
-         return responseSender.ok(res, message, data)
+      res.ok = (message?: Message, data?: any) => {
+         return responseSender.respond(res, ok({ message, data }))
       }
-      res.badRequest = (message: Message, data?: any) => {
-         return responseSender.badRequest(res, message, data)
+      res.created = (message?: Message, data?: any) => {
+         return responseSender.respond(res, created({ message, data }))
+      }
+      res.badRequest = (message?: Message, data?: any) => {
+         return responseSender.respond(res, badRequest({ message, data }))
       }
       res.unauthorized = (message?: Message, data?: any) => {
-         return responseSender.unauthorized(res, message, data)
+         return responseSender.respond(res, unauthorized({ message, data }))
       }
       res.forbidden = (message?: Message, data?: any) => {
-         return responseSender.forbidden(res, message, data)
+         return responseSender.respond(res, forbidden({ message, data }))
       }
       res.notFound = (message?: Message, data?: any) => {
-         return responseSender.notFound(res, message, data)
-      }
-      res.conflict = (message?: Message, data?: any) => {
-         return responseSender.conflict(res, message, data)
-      }
-      res.internalServerError = (message?: Message, data?: any) => {
-         return responseSender.internalServerError(res, message, data)
-      }
-      res.notImplemented = (message?: Message, data?: any) => {
-         return responseSender.notImplemented(res, message, data)
-      }
-      res.tooManyRequests = (message?: Message, data?: any) => {
-         return responseSender.tooManyRequests(res, message, data)
-      }
-      res.respondWith = (content: ResponseContent<Message>) => {
-         return responseSender.respondWith(res, content)
+         return responseSender.respond(res, notFound({ message, data }))
       }
       res.methodNotAllowed = (message?: Message, data?: any) => {
-         return responseSender.methodNotAllowed(res, message, data)
+         return responseSender.respond(res, methodNotAllowed({ message, data }))
       }
-      res.validationError = (message?: Message, data?: any) => {
-         return responseSender.validationError(res, message, data)
+      res.conflict = (message?: Message, data?: any) => {
+         return responseSender.respond(res, conflict({ message, data }))
       }
-
+      res.internalServerError = (message?: Message, data?: any) => {
+         return responseSender.respond(
+            res,
+            internalServerError({ message, data }),
+         )
+      }
+      res.notImplemented = (message?: Message, data?: any) => {
+         return responseSender.respond(res, notImplemented({ message, data }))
+      }
+      res.tooManyRequests = (message?: Message, data?: any) => {
+         return responseSender.respond(res, tooManyRequests({ message, data }))
+      }
+      res.methodNotAllowed = (message?: Message, data?: any) => {
+         return responseSender.respond(res, methodNotAllowed({ message, data }))
+      }
+      res.unprocessableEntity = (message?: Message, data?: any) => {
+         return responseSender.respond(
+            res,
+            unprocessableEntity({ message, data }),
+         )
+      }
+      res.tooManyRequests = (message?: Message, data?: any) => {
+         return responseSender.respond(res, tooManyRequests({ message, data }))
+      }
+      res.internalServerError = (message?: Message, data?: any) => {
+         return responseSender.respond(
+            res,
+            internalServerError({ message, data }),
+         )
+      }
+      res.notImplemented = (message?: Message, data?: any) => {
+         return responseSender.respond(res, notImplemented({ message, data }))
+      }
+      res.respondWith = (content: ResponseContent<Message>) => {
+         return responseSender.respond(res, content)
+      }
       next()
    }
 }

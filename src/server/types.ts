@@ -7,6 +7,7 @@ import e, {
 import zod, { ZodSchema } from "zod"
 import { Role } from "./middlewares/dynamic/auth"
 import { ResponseContent } from "./response/responseContent"
+import { StatusCode, StatusName } from "./response/statusCodes"
 
 //TODO: rename where appropriate
 export type BriskNext = NextFunction
@@ -53,26 +54,15 @@ export type RouteResponse<Message> = {
    status: number
 }
 
-type ResponseFunction<
-   Message,
-   isMessageRequired extends boolean,
-> = isMessageRequired extends true
-   ? (message: Message, data?: any) => RouteResponse<Message>
-   : (message?: Message, data?: any) => RouteResponse<Message>
+type ResponseFunction<Message> = (
+   message?: Message,
+   data?: any,
+) => RouteResponse<Message>
 
 type ExpressResponseExtension<Message> = {
-   ok: ResponseFunction<Message, true>
+   [key in StatusName]: ResponseFunction<Message>
+} & {
    respondWith: (response: ResponseContent<Message>) => RouteResponse<Message>
-   badRequest: ResponseFunction<Message, true>
-   unauthorized: ResponseFunction<Message, false>
-   forbidden: ResponseFunction<Message, false>
-   notFound: ResponseFunction<Message, false>
-   conflict: ResponseFunction<Message, false>
-   methodNotAllowed: ResponseFunction<Message, false>
-   validationError: ResponseFunction<Message, true>
-   internalServerError: ResponseFunction<Message, false>
-   notImplemented: ResponseFunction<Message, false>
-   tooManyRequests: ResponseFunction<Message, false>
 }
 
 export type BriskResponse<Message> = ExpressResponse &

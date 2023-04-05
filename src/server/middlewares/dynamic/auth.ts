@@ -3,7 +3,7 @@ import jwt, { TokenExpiredError } from "jsonwebtoken"
 import { Convert, AnyData } from "@flagg2/schema"
 import { BriskRequest, BriskResponse, RolesResolver } from "../../types"
 import assert from "assert"
-import { createResponseContent } from "../../response/responseContent"
+import { unauthorized, forbidden } from "../../response/responseContent"
 
 export type AuthConfig<
    KnownRoles extends {
@@ -61,18 +61,12 @@ function decodeAndVerifyToken<UserTokenSchema extends AnyData | undefined>(
       if (e instanceof TokenExpiredError) {
          return {
             decodedToken: null,
-            response: createResponseContent({
-               status: 401,
-               message: "Token expired",
-            }),
+            response: unauthorized({ message: "Token expired" }),
          }
       }
       return {
          decodedToken: null,
-         response: createResponseContent({
-            status: 401,
-            message: "Invalid token",
-         }),
+         response: unauthorized({ message: "Invalid token" }),
       }
    }
 }
@@ -172,10 +166,7 @@ function resolveAndMatchRoles<UserTokenSchema extends AnyData | undefined>(
    if (!roles.some((role) => allowedRoles.includes(role))) {
       return {
          matched: false,
-         response: createResponseContent({
-            status: 403,
-            message: "Forbidden",
-         }),
+         response: forbidden(),
       }
    }
 

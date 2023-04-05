@@ -1,5 +1,4 @@
 import { ZodSchema } from "zod"
-import { ResponseSender } from "../../response/ResponseSender"
 import { BuiltInMiddlewareResolver, BriskResponse } from "../../types"
 import { Request as ExpressRequest, NextFunction } from "express"
 

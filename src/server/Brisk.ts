@@ -4,10 +4,7 @@ import http from "http"
 import fs from "fs"
 import { ResponseSender } from "./response/ResponseSender"
 import { AnyError, ErrorResolver, RouteType } from "./types"
-import {
-   ErrorMessages,
-   defaultErrorMessages,
-} from "./response/defaultErrorMessages"
+import { Messages, defaultMessages } from "./response/messages"
 import { ZodSchema } from "zod"
 import { MiddlewareGenerator } from "./middlewares/Middlewares"
 import { AnyData } from "@flagg2/schema"
@@ -37,7 +34,7 @@ export type ServerOptions<
    // };
    authConfig?: AuthConfig<KnownRoles, UserTokenSchema>
    loggingMethods?: ((message: string) => void)[]
-   errorMessageOverrides?: ErrorMessages<Message>
+   errorMessageOverrides?: Messages<Message>
    customCatchers?: Map<AnyError, ErrorResolver<Message>>
    useHelmet?: boolean
    allowDuplicateRequests?: boolean
@@ -85,7 +82,7 @@ export class Brisk<
 
       this.responseGen = new ResponseSender<Message>(
          options.errorMessageOverrides ??
-            (defaultErrorMessages as ErrorMessages<Message>),
+            (defaultMessages as Messages<Message>),
       )
 
       this.middlewareGen = new MiddlewareGenerator<

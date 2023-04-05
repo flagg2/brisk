@@ -23,6 +23,7 @@ import { pathToRegex, prependSlash } from "./utils/path"
 import { getNotImplementedMiddleware } from "./middlewares/static"
 import { Role } from "./middlewares/dynamic/auth"
 import { addAppResolver, addRouterResolvers } from "./utils/castAndUse"
+import { internalServerError } from "./response/responseContent"
 
 // Class that remebers paths of resources and is table to take a user provided path
 // and return (if it exists) the path that matches the user provided path.
@@ -97,8 +98,13 @@ export class Router<
          res: BriskResponse<Message>,
          next: NextFunction,
       ) => {
-         const matchingPath = this.getMatchingPath(req.path)
-         if (matchingPath === undefined) {
+         const matchingPaths = this.getMatchingPaths(req.path)
+         if (matchingPaths === undefined) {
+            return res.notFound()
+         }
+
+         const matchingPath = this.getMostSpecificPath(matchingPaths)
+         if (matchingPath === null) {
             return res.notFound()
          }
 
@@ -288,10 +294,26 @@ export class Router<
       return this.requests
    }
 
-   private getMatchingPath(userPath: string) {
-      return Object.keys(this.routingInfo).find((route) =>
+   private getMatchingPaths(userPath: string): string[] {
+      return Object.keys(this.routingInfo).filter((route) =>
          new RegExp(pathToRegex(route)).test(userPath),
       )
+   }
+
+   // prefer more slashes but less colons
+   private getMostSpecificPath(matchingPaths: string[]): string | null {
+      if (matchingPaths.length === 0) {
+         return null
+      }
+
+      return matchingPaths.reduce((prev, curr) => {
+         const prevSlashes = prev.split("/").length
+         const currSlashes = curr.split("/").length
+         if (prevSlashes === currSlashes) {
+            return prev.split(":").length < curr.split(":").length ? prev : curr
+         }
+         return prevSlashes > currSlashes ? prev : curr
+      }, ":".repeat(100))
    }
 
    private catchErrorsWithin(
@@ -313,7 +335,7 @@ export class Router<
                return catcher(req, res, next, err)
             }
             console.error(err)
-            return this.responseGenerator.internalServerError(res)
+            return this.responseGenerator.respond(res, internalServerError())
          }
       }
    }
