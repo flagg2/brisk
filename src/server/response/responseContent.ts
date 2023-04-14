@@ -1,6 +1,6 @@
 import { StatusCode } from "./statusCodes"
 
-type ResponseParams<Message> = {
+type ResponseParamsWithCode<Message> = {
    status: StatusCode
    data?: any
    message?: Message
@@ -12,14 +12,19 @@ export type ResponseContent<Message> = {
    message?: Message
 }
 
+export type ResponseParams<Message> = {
+   message?: Message
+   data?: any
+}
+
 function hasData<Message = any>(
-   params: ResponseParams<Message>,
-): params is ResponseParams<Message> & { data: any } {
+   params: ResponseParamsWithCode<Message>,
+): params is ResponseParamsWithCode<Message> & { data: any } {
    return params.hasOwnProperty("data")
 }
 
 function createResponseContent<Message = any>(
-   params: ResponseParams<Message>,
+   params: ResponseParamsWithCode<Message>,
 ): ResponseContent<Message> {
    return {
       message: params.message,
@@ -28,11 +33,12 @@ function createResponseContent<Message = any>(
    }
 }
 
-export function ok<Message = any>(opts?: {
-   message?: Message
-   data?: any
-}): ResponseContent<Message> {
-   const { message, data } = opts ?? {}
+type ResponseFunction<Message = any> = (
+   params?: ResponseParams<Message>,
+) => ResponseContent<Message>
+
+export const ok: ResponseFunction = (params) => {
+   const { message, data } = params ?? {}
    return createResponseContent({
       status: 200,
       message,
@@ -40,11 +46,8 @@ export function ok<Message = any>(opts?: {
    })
 }
 
-export function created<Message = any>(opts?: {
-   message?: Message
-   data?: any
-}): ResponseContent<Message> {
-   const { message, data } = opts ?? {}
+export const created: ResponseFunction = (params) => {
+   const { message, data } = params ?? {}
    return createResponseContent({
       status: 201,
       message,
@@ -52,11 +55,8 @@ export function created<Message = any>(opts?: {
    })
 }
 
-export function badRequest<Message = any>(opts?: {
-   message?: Message
-   data?: any
-}): ResponseContent<Message> {
-   const { message, data } = opts ?? {}
+export const badRequest: ResponseFunction = (params) => {
+   const { message, data } = params ?? {}
    return createResponseContent({
       status: 400,
       message,
@@ -64,11 +64,8 @@ export function badRequest<Message = any>(opts?: {
    })
 }
 
-export function unauthorized<Message = any>(opts?: {
-   message?: Message
-   data?: any
-}): ResponseContent<Message> {
-   const { message, data } = opts ?? {}
+export const unauthorized: ResponseFunction = (params) => {
+   const { message, data } = params ?? {}
    return createResponseContent({
       status: 401,
       message,
@@ -76,11 +73,8 @@ export function unauthorized<Message = any>(opts?: {
    })
 }
 
-export function forbidden<Message = any>(opts?: {
-   message?: Message
-   data?: any
-}): ResponseContent<Message> {
-   const { message, data } = opts ?? {}
+export const forbidden: ResponseFunction = (params) => {
+   const { message, data } = params ?? {}
    return createResponseContent({
       status: 403,
       message,
@@ -88,11 +82,8 @@ export function forbidden<Message = any>(opts?: {
    })
 }
 
-export function notFound<Message = any>(opts?: {
-   message?: Message
-   data?: any
-}): ResponseContent<Message> {
-   const { message, data } = opts ?? {}
+export const notFound: ResponseFunction = (params) => {
+   const { message, data } = params ?? {}
    return createResponseContent({
       status: 404,
       message,
@@ -100,11 +91,8 @@ export function notFound<Message = any>(opts?: {
    })
 }
 
-export function methodNotAllowed<Message = any>(opts?: {
-   message?: Message
-   data?: any
-}): ResponseContent<Message> {
-   const { message, data } = opts ?? {}
+export const methodNotAllowed: ResponseFunction = (params) => {
+   const { message, data } = params ?? {}
    return createResponseContent({
       status: 405,
       message,
@@ -112,11 +100,8 @@ export function methodNotAllowed<Message = any>(opts?: {
    })
 }
 
-export function conflict<Message = any>(opts?: {
-   message?: Message
-   data?: any
-}): ResponseContent<Message> {
-   const { message, data } = opts ?? {}
+export const conflict: ResponseFunction = (params) => {
+   const { message, data } = params ?? {}
    return createResponseContent({
       status: 409,
       message,
@@ -124,11 +109,8 @@ export function conflict<Message = any>(opts?: {
    })
 }
 
-export function unprocessableEntity<Message = any>(opts?: {
-   message?: Message
-   data?: any
-}): ResponseContent<Message> {
-   const { message, data } = opts ?? {}
+export const unprocessableEntity: ResponseFunction = (params) => {
+   const { message, data } = params ?? {}
    return createResponseContent({
       status: 422,
       message,
@@ -136,11 +118,8 @@ export function unprocessableEntity<Message = any>(opts?: {
    })
 }
 
-export function tooManyRequests<Message = any>(opts?: {
-   message?: Message
-   data?: any
-}): ResponseContent<Message> {
-   const { message, data } = opts ?? {}
+export const tooManyRequests: ResponseFunction = (params) => {
+   const { message, data } = params ?? {}
    return createResponseContent({
       status: 429,
       message,
@@ -148,11 +127,8 @@ export function tooManyRequests<Message = any>(opts?: {
    })
 }
 
-export function internalServerError<Message = any>(opts?: {
-   message?: Message
-   data?: any
-}): ResponseContent<Message> {
-   const { message, data } = opts ?? {}
+export const internalServerError: ResponseFunction = (params) => {
+   const { message, data } = params ?? {}
    return createResponseContent({
       status: 500,
       message,
@@ -160,11 +136,8 @@ export function internalServerError<Message = any>(opts?: {
    })
 }
 
-export function notImplemented<Message = any>(opts?: {
-   message?: Message
-   data?: any
-}): ResponseContent<Message> {
-   const { message, data } = opts ?? {}
+export const notImplemented: ResponseFunction = (params) => {
+   const { message, data } = params ?? {}
    return createResponseContent({
       status: 501,
       message,

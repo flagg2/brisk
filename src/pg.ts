@@ -20,8 +20,9 @@ const server = new Brisk({
       userTokenSchema: schema.object({
          id: schema.string(),
       }),
-      rolesResolver: () => {
-         return [test]
+      rolesResolver: async () => {
+         await sleep(1000)
+         return []
       },
    },
 })
@@ -51,10 +52,16 @@ router.get(
    },
 )
 
-router.post("/:id/a", async (req, res) => {
-   console.log(req.user)
-   return res.respondWith(responseIsGeneratedHere())
-})
+router.post(
+   "/:id/a",
+   async (req, res) => {
+      console.log(req.user)
+      return res.respondWith(responseIsGeneratedHere())
+   },
+   {
+      allowedRoles: [test],
+   },
+)
 
 function responseIsGeneratedHere() {
    return conflict({

@@ -1,5 +1,29 @@
 # @flagg2/brisk
 
+## 1.4.4
+
+### Patch Changes
+
+-  make rolesresolver async
+
+## 1.4.3
+
+### Patch Changes
+
+-  include error object in validation errors
+
+## 1.4.2
+
+### Patch Changes
+
+-  fixed a typescript bug
+
+## 1.4.1
+
+### Patch Changes
+
+-  Fix types for responses
+
 ## 1.4.0
 
 ### Minor Changes

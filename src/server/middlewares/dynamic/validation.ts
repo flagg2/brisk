@@ -18,8 +18,9 @@ export function getSchemaValidationMiddleware<Message>(
          }
          next()
       } catch (error: any) {
-         // @ts-ignore TODO: fix send config defined error message
-         res.validationError("Validation error", error)
+         res.unprocessableEntity({
+            data: error,
+         })
       }
    }
 }

@@ -6,7 +6,7 @@ import e, {
 } from "express"
 import zod, { ZodSchema } from "zod"
 import { Role } from "./middlewares/dynamic/auth"
-import { ResponseContent } from "./response/responseContent"
+import { ResponseContent, ResponseParams } from "./response/responseContent"
 import { StatusCode, StatusName } from "./response/statusCodes"
 
 //TODO: rename where appropriate
@@ -55,8 +55,7 @@ export type RouteResponse<Message> = {
 }
 
 type ResponseFunction<Message> = (
-   message?: Message,
-   data?: any,
+   params?: ResponseParams<Message>,
 ) => RouteResponse<Message>
 
 type ExpressResponseExtension<Message> = {
@@ -123,5 +122,5 @@ export type RouteType =
 
 export type RolesResolver<UserTokenSchema extends object | undefined> =
    UserTokenSchema extends undefined
-      ? (req: ExpressRequest) => Role[]
-      : (userToken: Convert<UserTokenSchema>) => Role[]
+      ? (req: ExpressRequest) => Promise<Role[]>
+      : (userToken: Convert<UserTokenSchema>) => Promise<Role[]>

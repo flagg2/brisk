@@ -78,7 +78,7 @@ function getTokenResolver<
    },
 >(config: AuthConfig<KnownRoles, UserTokenSchema>, allowedRoles?: Role[]) {
    assert(config.resolverType === "token")
-   return (
+   return async (
       req: BriskRequest<any, any, UserTokenSchema, any>,
       res: BriskResponse<any>,
       next: NextFunction,
@@ -89,7 +89,9 @@ function getTokenResolver<
 
       if (extractedToken == null) {
          if (allowedRoles != null) {
-            return res.unauthorized("No token provided")
+            return res.unauthorized({
+               message: "No token provided",
+            })
          }
          return next()
       }
@@ -106,7 +108,7 @@ function getTokenResolver<
          ? undefined
          : Convert<UserTokenSchema, false> | undefined
 
-      const { response: roleResponse } = resolveAndMatchRoles(
+      const { response: roleResponse } = await resolveAndMatchRoles(
          config.rolesResolver,
          decodedToken,
          allowedRoles,
@@ -127,12 +129,12 @@ function getRequestResolver<
    },
 >(config: AuthConfig<KnownRoles, UserTokenSchema>, allowedRoles?: Role[]) {
    assert(config.resolverType === "request")
-   return (
+   return async (
       req: BriskRequest<any, any, UserTokenSchema, any>,
       res: BriskResponse<any>,
       next: NextFunction,
    ) => {
-      const { response } = resolveAndMatchRoles(
+      const { response } = await resolveAndMatchRoles(
          config.rolesResolver,
          req as ExpressRequest,
          allowedRoles,
@@ -148,7 +150,9 @@ function getRequestResolver<
 
 //TODO: check correctness of this
 
-function resolveAndMatchRoles<UserTokenSchema extends AnyData | undefined>(
+async function resolveAndMatchRoles<
+   UserTokenSchema extends AnyData | undefined,
+>(
    resolver: RolesResolver<UserTokenSchema>,
    resolverData: Convert<UserTokenSchema, false> | ExpressRequest,
    allowedRoles?: Role[],
@@ -160,8 +164,8 @@ function resolveAndMatchRoles<UserTokenSchema extends AnyData | undefined>(
       }
    }
 
-   //@ts-ignore TODO: fix this
-   const roles = resolver(resolverData)
+   //@ts-ignore TODO:
+   const roles = await resolver(resolverData)
 
    if (!roles.some((role) => allowedRoles.includes(role))) {
       return {
