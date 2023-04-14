@@ -56,8 +56,6 @@ export class Router<
    private routingInfo: {
       [path: string]: RouteResolver<Message, any, KnownRoles>[]
    } = {}
-   //TODO: make an option
-   private uploadMetaStorage: TemporaryStorage = new TemporaryStorage(60 * 1000)
    private router: ExpressRouter
    private middlewareGen: MiddlewareGenerator<
       Message,
@@ -305,16 +303,25 @@ export class Router<
       >,
       opts?: UploadRequestOptions<ValidationSchema, KnownRoles>,
    ) {
-      this.addRoute({
-         type: "POST",
-         path: `${path}/meta`,
-         opts,
-         resolver: getUploadMetaResolver(this.uploadMetaStorage),
-      })
+      const storage = new TemporaryStorage(
+         opts?.uploadConfig?.metadataValidForMs ?? 60 * 1000,
+      )
+
+      const hasMetadata = opts?.validationSchema !== undefined
+
+      if (hasMetadata) {
+         this.addRoute({
+            type: "POST",
+            path: `${path}/meta`,
+            opts,
+            resolver: getUploadMetaResolver(storage),
+         })
+      }
 
       const middleware = getUploadFileMiddleware({
-         metaStorage: this.uploadMetaStorage,
+         metaStorage: storage,
          ...opts?.uploadConfig,
+         hasMetadata,
       })
 
       this.app.use(`${path}/file`, middleware as any)

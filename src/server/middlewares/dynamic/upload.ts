@@ -5,6 +5,7 @@ import { AnyBriskRequest, AnyBriskResponse } from "src/server/types"
 
 type SingleFileUploadMiddlewareOptions = {
    metaStorage: TemporaryStorage
+   hasMetadata: boolean
    maxFileSize?: number // optional file size limit in bytes
    allowedFileExtensions?: string[] // optional allowed file types as an array of strings
    allowedMimeTypes?: string[] // optional allowed mime types as an array of strings
@@ -13,7 +14,8 @@ type SingleFileUploadMiddlewareOptions = {
 export const getUploadFileMiddleware = (
    options: SingleFileUploadMiddlewareOptions,
 ) => {
-   const { maxFileSize, allowedFileExtensions, allowedMimeTypes } = options
+   const { maxFileSize, allowedFileExtensions, allowedMimeTypes, hasMetadata } =
+      options
    const upload = multer({
       limits: { fileSize: maxFileSize ?? 1000000 }, // Default to 1MB if fileSize option not provided
       fileFilter: (req, file, cb) => {
@@ -50,7 +52,7 @@ export const getUploadFileMiddleware = (
    })
 
    return (req: AnyBriskRequest, res: AnyBriskResponse, next: BriskNext) => {
-      const { metaId } = req.query
+      const { metaId } = req.query as { metaId?: string }
       const metaKey = metaId
 
       if (metaKey === undefined) {
@@ -59,6 +61,7 @@ export const getUploadFileMiddleware = (
          })
       }
 
+      //@ts-expect-error //TODO: fix this
       upload.single("file")(req, res, (err) => {
          if (err) {
             return res.badRequest({
@@ -71,18 +74,18 @@ export const getUploadFileMiddleware = (
                message: "No file attached",
             })
          }
+         if (hasMetadata) {
+            const { metaStorage } = options
+            const meta = metaStorage.getAndDelete(metaKey)
 
-         const { metaStorage } = options
-         const meta = metaStorage.getAndDelete(metaKey)
-
-         //TODO: support case where no metadata is attached
-         if (meta === null) {
-            return res.notFound({
-               message: "No attached metadata found",
-            })
+            //TODO: support case where no metadata is attached
+            if (meta === null) {
+               return res.notFound({
+                  message: "No attached metadata found",
+               })
+            }
+            req.body = meta
          }
-
-         req.body = meta
 
          next()
       })

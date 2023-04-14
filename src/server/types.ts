@@ -89,6 +89,10 @@ type ParamsFromPath<Path extends string> = {
    [K in ExtractParams<Path>]: string
 }
 
+type isAny<T> = 0 extends 1 & T ? true : false
+
+type AnyAsUnknown<T> = isAny<T> extends true ? unknown : T
+
 type ExpressRequestExtension<
    ValidationSchema extends ZodSchema<any> | null,
    _RouteType extends BriskRouteType,
@@ -98,12 +102,12 @@ type ExpressRequestExtension<
    body: _RouteType extends "GET"
       ? never
       : ValidationSchema extends ZodSchema<any>
-      ? zod.infer<ValidationSchema>
+      ? AnyAsUnknown<zod.infer<ValidationSchema>>
       : never
    rawBody: _RouteType extends "GET" ? never : string
    query: _RouteType extends "GET"
       ? ValidationSchema extends ZodSchema<any>
-         ? zod.infer<ValidationSchema>
+         ? AnyAsUnknown<zod.infer<ValidationSchema>>
          : never
       : never
    user: UserTokenSchema extends undefined

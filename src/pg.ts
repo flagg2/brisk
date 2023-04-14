@@ -2,11 +2,6 @@ import schema from "@flagg2/schema"
 import { z } from "zod"
 import { Role } from "./server/middlewares/dynamic/auth"
 import { Brisk } from "./server/Brisk"
-import {
-   badRequest,
-   conflict,
-   created,
-} from "./server/response/responseContent"
 
 const test = new Role("test", "test")
 
@@ -41,7 +36,7 @@ router.upload(
    {
       uploadConfig: {
          allowedFileExtensions: ["ts"],
-         maxFileSize: 1,
+         metadataValidForMs: 100000,
       },
       validationSchema: z.object({
          alt: z.string(),

@@ -4,10 +4,10 @@ export class TemporaryStorage {
    private data: {
       [key: string]: unknown
    } = {}
-   private ttl: number
+   private ttlms: number
 
-   constructor(ttl: number) {
-      this.ttl = ttl
+   constructor(ttlms: number) {
+      this.ttlms = ttlms
    }
 
    public set(value: unknown) {
@@ -16,7 +16,7 @@ export class TemporaryStorage {
 
       setTimeout(() => {
          delete this.data[key]
-      }, this.ttl)
+      }, this.ttlms)
 
       return key
    }

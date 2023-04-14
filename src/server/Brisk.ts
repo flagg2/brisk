@@ -64,6 +64,7 @@ export type UploadRequestOptions<
    uploadConfig?: {
       maxFileSize?: number
       allowedFileExtensions?: string[]
+      metadataValidForMs?: number
    }
 }
 export class Brisk<
