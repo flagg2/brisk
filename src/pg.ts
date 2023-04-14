@@ -31,42 +31,22 @@ const router = server.getRouter()
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
-router.use("/", (req, res, next) => {
-   console.log("middleware")
-   next()
-})
-
-router.get(
-   "/:id/a",
+router.upload(
+   "/upload",
    async (req, res) => {
-      console.log(req.user)
-      const response = responseIsGeneratedHere()
-      await sleep(1000)
-      return res.respondWith(response)
+      console.log(req.file)
+      console.log(req.body.alt)
+      return res.ok()
    },
    {
+      uploadConfig: {
+         allowedFileExtensions: ["ts"],
+         maxFileSize: 1,
+      },
       validationSchema: z.object({
-         id: z.string(),
+         alt: z.string(),
       }),
-      allowedRoles: [test],
    },
 )
-
-router.post(
-   "/:id/a",
-   async (req, res) => {
-      console.log(req.user)
-      return res.respondWith(responseIsGeneratedHere())
-   },
-   {
-      allowedRoles: [test],
-   },
-)
-
-function responseIsGeneratedHere() {
-   return conflict({
-      data: "kokot",
-   })
-}
 
 server.start()

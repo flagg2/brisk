@@ -1,12 +1,13 @@
 import {
-   RouteType,
-   Resolver,
+   BriskRouteType,
+   BriskResolver,
    CustomMiddlewareResolver,
    BuiltInMiddlewareResolver,
    AnyError,
    ErrorResolver,
    BriskRequest,
    BriskResponse,
+   ExpressRouteType,
 } from "./types"
 
 import {
@@ -17,13 +18,18 @@ import {
 import { MiddlewareGenerator } from "./middlewares/Middlewares"
 import { AnyData } from "@flagg2/schema"
 import { ResponseSender } from "./response/ResponseSender"
-import { RequestOptions } from "./Brisk"
+import { RequestOptions, UploadRequestOptions } from "./Brisk"
 import { ZodSchema, ZodTypeDef } from "zod"
 import { pathToRegex, prependSlash } from "./utils/path"
 import { getNotImplementedMiddleware } from "./middlewares/static"
 import { Role } from "./middlewares/dynamic/auth"
 import { addAppResolver, addRouterResolvers } from "./utils/castAndUse"
 import { internalServerError } from "./response/responseContent"
+import { TemporaryStorage } from "./TemporaryStorage"
+import {
+   getUploadFileMiddleware,
+   getUploadMetaResolver,
+} from "./middlewares/dynamic/upload"
 
 // Class that remebers paths of resources and is table to take a user provided path
 // and return (if it exists) the path that matches the user provided path.
@@ -33,12 +39,12 @@ type RouteResolver<
    ValidationSchema extends ZodSchema<any, ZodTypeDef, any>,
    KnownRoles extends { [key: string]: Role },
 > = {
-   type: RouteType
+   type: BriskRouteType
    resolver:
-      | Resolver<Message, any, any, any, any>
+      | BriskResolver<Message, any, any, any, any>
       | CustomMiddlewareResolver<Message, any, any>
       | BuiltInMiddlewareResolver<Message>
-   opts?: RequestOptions<Message, ValidationSchema, KnownRoles>
+   opts?: RequestOptions<ValidationSchema, KnownRoles>
 }
 
 export class Router<
@@ -50,6 +56,8 @@ export class Router<
    private routingInfo: {
       [path: string]: RouteResolver<Message, any, KnownRoles>[]
    } = {}
+   //TODO: make an option
+   private uploadMetaStorage: TemporaryStorage = new TemporaryStorage(60 * 1000)
    private router: ExpressRouter
    private middlewareGen: MiddlewareGenerator<
       Message,
@@ -128,20 +136,20 @@ export class Router<
    }
 
    public addRoute<
-      _RouteType extends RouteType,
+      _RouteType extends ExpressRouteType,
       ValidationSchema extends ZodSchema<any>,
       Path extends string,
    >(config: {
       type: _RouteType
       path: Path
-      resolver?: Resolver<
+      resolver?: BriskResolver<
          Message,
          ValidationSchema,
          _RouteType,
          UserTokenSchema,
          Path
       >
-      opts?: RequestOptions<Message, ValidationSchema, KnownRoles>
+      opts?: RequestOptions<ValidationSchema, KnownRoles>
    }) {
       //TODO: maybe add later
       // if (this.started) {
@@ -175,7 +183,7 @@ export class Router<
 
       addRouterResolvers(
          this.router,
-         type.toLowerCase() as RouteType,
+         type.toLowerCase() as BriskRouteType,
          path,
          wrappedResolvers,
       )
@@ -183,14 +191,14 @@ export class Router<
 
    public get<ValidationSchema extends ZodSchema<any>, Path extends string>(
       path: Path,
-      resolver?: Resolver<
+      resolver?: BriskResolver<
          Message,
          ValidationSchema,
          "GET",
          UserTokenSchema,
          Path
       >,
-      opts?: RequestOptions<Message, ValidationSchema, KnownRoles>,
+      opts?: RequestOptions<ValidationSchema, KnownRoles>,
    ) {
       this.addRoute({
          type: "GET",
@@ -202,14 +210,14 @@ export class Router<
 
    public post<ValidationSchema extends ZodSchema<any>, Path extends string>(
       path: Path,
-      resolver?: Resolver<
+      resolver?: BriskResolver<
          Message,
          ValidationSchema,
          "POST",
          UserTokenSchema,
          Path
       >,
-      opts?: RequestOptions<Message, ValidationSchema, KnownRoles>,
+      opts?: RequestOptions<ValidationSchema, KnownRoles>,
    ) {
       this.addRoute({
          type: "POST",
@@ -221,14 +229,14 @@ export class Router<
 
    public put<ValidationSchema extends ZodSchema<any>, Path extends string>(
       path: Path,
-      resolver?: Resolver<
+      resolver?: BriskResolver<
          Message,
          ValidationSchema,
          "PUT",
          UserTokenSchema,
          Path
       >,
-      opts?: RequestOptions<Message, ValidationSchema, KnownRoles>,
+      opts?: RequestOptions<ValidationSchema, KnownRoles>,
    ) {
       this.addRoute({
          type: "PUT",
@@ -240,14 +248,14 @@ export class Router<
 
    public patch<ValidationSchema extends ZodSchema<any>, Path extends string>(
       path: Path,
-      resolver?: Resolver<
+      resolver?: BriskResolver<
          Message,
          ValidationSchema,
          "PATCH",
          UserTokenSchema,
          Path
       >,
-      opts?: RequestOptions<Message, ValidationSchema, KnownRoles>,
+      opts?: RequestOptions<ValidationSchema, KnownRoles>,
    ) {
       this.addRoute({
          type: "PATCH",
@@ -259,14 +267,14 @@ export class Router<
 
    public delete<ValidationSchema extends ZodSchema<any>, Path extends string>(
       path: Path,
-      resolver?: Resolver<
+      resolver?: BriskResolver<
          Message,
          ValidationSchema,
          "DELETE",
          UserTokenSchema,
          Path
       >,
-      opts?: RequestOptions<Message, ValidationSchema, KnownRoles>,
+      opts?: RequestOptions<ValidationSchema, KnownRoles>,
    ) {
       this.addRoute({
          type: "DELETE",
@@ -284,6 +292,40 @@ export class Router<
          path: prependSlash(path) as Path,
          resolver: middleware as CustomMiddlewareResolver<Message, any, any>,
       })
+   }
+
+   public upload<ValidationSchema extends ZodSchema<any>, Path extends string>(
+      path: Path,
+      resolver: BriskResolver<
+         Message,
+         ValidationSchema,
+         "UPLOAD",
+         UserTokenSchema,
+         Path
+      >,
+      opts?: UploadRequestOptions<ValidationSchema, KnownRoles>,
+   ) {
+      this.addRoute({
+         type: "POST",
+         path: `${path}/meta`,
+         opts,
+         resolver: getUploadMetaResolver(this.uploadMetaStorage),
+      })
+
+      const middleware = getUploadFileMiddleware({
+         metaStorage: this.uploadMetaStorage,
+         ...opts?.uploadConfig,
+      })
+
+      this.app.use(`${path}/file`, middleware as any)
+
+      //TODO: do types properly and remove cast
+      this.addRoute({
+         type: "POST",
+         path: `${path}/file`,
+         opts,
+         resolver,
+      } as any)
    }
 
    public getRoutingInfo() {
@@ -319,7 +361,7 @@ export class Router<
    private catchErrorsWithin(
       resolver:
          | BuiltInMiddlewareResolver<Message>
-         | Resolver<Message, any, any, any, any>,
+         | BriskResolver<Message, any, any, any, any>,
    ) {
       return async (
          //TODO: type this better

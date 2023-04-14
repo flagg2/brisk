@@ -7,15 +7,27 @@ import e, {
 import zod, { ZodSchema } from "zod"
 import { Role } from "./middlewares/dynamic/auth"
 import { ResponseContent, ResponseParams } from "./response/responseContent"
-import { StatusCode, StatusName } from "./response/statusCodes"
+import { StatusName } from "./response/statusCodes"
 
 //TODO: rename where appropriate
 export type BriskNext = NextFunction
 
-export type Resolver<
+type MulterFile = {
+   fieldname: string
+   originalname: string
+   encoding: string
+   mimetype: string
+   size: number
+   destination: string
+   filename: string
+   path: string
+   buffer: Buffer
+}
+
+export type BriskResolver<
    Message,
    ValidationSchema extends ZodSchema<any> | null,
-   _RouteType extends RouteType,
+   _RouteType extends BriskRouteType,
    UserTokenSchema extends object | undefined,
    Path extends string,
 > = (
@@ -79,7 +91,7 @@ type ParamsFromPath<Path extends string> = {
 
 type ExpressRequestExtension<
    ValidationSchema extends ZodSchema<any> | null,
-   _RouteType extends RouteType,
+   _RouteType extends BriskRouteType,
    UserTokenSchema extends object | undefined,
    Path extends string,
 > = {
@@ -97,28 +109,34 @@ type ExpressRequestExtension<
    user: UserTokenSchema extends undefined
       ? undefined
       : Convert<UserTokenSchema> | undefined
+   file: _RouteType extends "UPLOAD" ? {} : never
    params: ParamsFromPath<Path>
    parameterizedUrl: string
 }
 
 export type BriskRequest<
    ValidationSchema extends ZodSchema<any> | null,
-   _RouteType extends RouteType,
+   _RouteType extends BriskRouteType,
    UserTokenSchema extends object | undefined,
    Path extends string,
-> = Omit<ExpressRequest, "body" | "query" | "params"> &
+> = Omit<ExpressRequest, "body" | "query" | "params" | "files"> &
    ExpressRequestExtension<ValidationSchema, _RouteType, UserTokenSchema, Path>
+
+export type AnyBriskRequest = BriskRequest<any, any, any, any>
+
+export type AnyBriskResponse = BriskResponse<any>
 
 export type AnyError = new (...args: any[]) => Error
 
-export type RouteType =
+export type ExpressRouteType =
    | "GET"
    | "POST"
    | "PUT"
    | "DELETE"
    | "PATCH"
    | "OPTIONS"
-   | "MIDDLEWARE"
+
+export type BriskRouteType = ExpressRouteType | "MIDDLEWARE" | "UPLOAD"
 
 export type RolesResolver<UserTokenSchema extends object | undefined> =
    UserTokenSchema extends undefined

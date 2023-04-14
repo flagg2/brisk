@@ -3,7 +3,7 @@ import https from "https"
 import http from "http"
 import fs from "fs"
 import { ResponseSender } from "./response/ResponseSender"
-import { AnyError, ErrorResolver, RouteType } from "./types"
+import { AnyError, ErrorResolver, BriskRouteType } from "./types"
 import { Messages, defaultMessages } from "./response/messages"
 import { ZodSchema } from "zod"
 import { MiddlewareGenerator } from "./middlewares/Middlewares"
@@ -41,11 +41,10 @@ export type ServerOptions<
 }
 
 export type AllowedRouteMethods = {
-   [path: string]: RouteType[]
+   [path: string]: BriskRouteType[]
 }
 
 export type RequestOptions<
-   Message,
    ValidationSchema extends ZodSchema<any>,
    KnownRoles extends {
       [key: string]: Role
@@ -54,6 +53,18 @@ export type RequestOptions<
    allowedRoles?: KnownRoles[keyof KnownRoles][]
    allowDuplicateRequests?: boolean
    validationSchema?: ValidationSchema
+}
+
+export type UploadRequestOptions<
+   ValidationSchema extends ZodSchema<any>,
+   KnownRoles extends {
+      [key: string]: Role
+   },
+> = RequestOptions<ValidationSchema, KnownRoles> & {
+   uploadConfig?: {
+      maxFileSize?: number
+      allowedFileExtensions?: string[]
+   }
 }
 export class Brisk<
    Message = string,

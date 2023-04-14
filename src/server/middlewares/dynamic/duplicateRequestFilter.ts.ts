@@ -28,7 +28,6 @@ export function getDuplicateRequestFilterMiddleware<Message>(
       res: BriskResponse<Message>,
       next: NextFunction,
    ) => {
-      console.log("getDuplicateRequestFilterMiddleware")
       const requests = getRequests()
       if (
          req.method === "OPTIONS" ||

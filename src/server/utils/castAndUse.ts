@@ -5,8 +5,8 @@ import {
 import {
    BuiltInMiddlewareResolver,
    CustomMiddlewareResolver,
-   Resolver,
-   RouteType,
+   BriskResolver,
+   BriskRouteType,
 } from "../types"
 
 export async function addAppResolver(
@@ -14,7 +14,7 @@ export async function addAppResolver(
    resolver:
       | BuiltInMiddlewareResolver<any>
       | CustomMiddlewareResolver<any, any, any>
-      | Resolver<any, any, any, any, any>,
+      | BriskResolver<any, any, any, any, any>,
    path = "/",
 ) {
    app.use(path, resolver as any)
@@ -22,12 +22,12 @@ export async function addAppResolver(
 
 export async function addRouterResolvers(
    router: ExpressRouter,
-   type: RouteType,
+   type: BriskRouteType,
    path: string,
    resolvers: (
       | BuiltInMiddlewareResolver<any>
       | CustomMiddlewareResolver<any, any, any>
-      | Resolver<any, any, any, any, any>
+      | BriskResolver<any, any, any, any, any>
    )[],
 ) {
    // @ts-ignore
