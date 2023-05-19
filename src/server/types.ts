@@ -24,7 +24,7 @@ type MulterFile = {
    buffer: Buffer
 }
 
-export type BriskResolver<
+export type UnwrappedBriskResolver<
    Message,
    ValidationSchema extends ZodSchema<any> | null,
    _RouteType extends BriskRouteType,
@@ -32,23 +32,22 @@ export type BriskResolver<
    Path extends string,
 > = (
    req: BriskRequest<ValidationSchema, _RouteType, UserTokenSchema, Path>,
-   res: BriskResponse<Message>,
-   next?: NextFunction,
-) => Promise<RouteResponse<Message>> | RouteResponse<Message>
+) => Promise<ResponseContent<Message>>
 
-//TODO: using post here but should be a designated type
-export type CustomMiddlewareResolver<
+export type UnwrappedMiddlewareResolver<
    Message,
    UserTokenSchema extends object | undefined,
    Path extends string,
 > = (
    req: BriskRequest<null, "MIDDLEWARE", UserTokenSchema, Path>,
-   res: BriskResponse<Message>,
-   next: NextFunction,
-) => Promise<RouteResponse<Message>> | RouteResponse<Message> | void
+) => Promise<ResponseContent<Message> | void>
 
-export type BuiltInMiddlewareResolver<Message> = (
-   req: ExpressRequest,
+export type WrappedMiddlewareResolver<
+   Message,
+   UserTokenSchema extends object | undefined,
+   Path extends string,
+> = (
+   req: BriskRequest<null, "MIDDLEWARE", UserTokenSchema, Path>,
    res: BriskResponse<Message>,
    next: NextFunction,
 ) => Promise<RouteResponse<Message> | void> | RouteResponse<Message> | void

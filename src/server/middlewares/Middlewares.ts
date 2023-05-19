@@ -1,5 +1,4 @@
 import { ServerOptions } from "../Brisk"
-import { BuiltInMiddlewareResolver } from "../types"
 import { ResponseSender } from "../response/ResponseSender"
 import { ZodSchema, ZodObject } from "zod"
 import { AnyData } from "@flagg2/schema"
@@ -16,6 +15,7 @@ import {
 import { getSchemaValidationMiddleware } from "./dynamic/validation"
 import { getAuthMiddleware, Role } from "./dynamic/auth"
 import { getDuplicateRequestFilterMiddleware } from "./dynamic/duplicateRequestFilter.ts"
+import { WrappedMiddlewareResolver } from "../types"
 
 export class MiddlewareGenerator<
    Message,
@@ -35,8 +35,12 @@ export class MiddlewareGenerator<
       this.responseSender = response
    }
 
-   public getDefaultMiddlewares(): BuiltInMiddlewareResolver<Message>[] {
-      const middlewares: BuiltInMiddlewareResolver<Message>[] = [
+   public getDefaultMiddlewares(): WrappedMiddlewareResolver<
+      Message,
+      any,
+      any
+   >[] {
+      const middlewares: WrappedMiddlewareResolver<Message, any, any>[] = [
          getAttachResponseMethodsMiddleware(this.responseSender),
          getLogRequestMiddleware(this.options.loggingMethods),
          getKeepRawBodyMiddleware(),
@@ -57,13 +61,14 @@ export class MiddlewareGenerator<
       allowDuplicateRequests?: boolean,
       validationSchema?: ZodSchema<any>,
    ) {
-      const middlewares: BuiltInMiddlewareResolver<Message>[] = []
+      const middlewares: WrappedMiddlewareResolver<Message, any, any>[] = []
 
       middlewares.push(
+         // @ts-ignore
          getAuthMiddleware(
             this.options.authConfig!,
             allowedRoles,
-         ) as BuiltInMiddlewareResolver<Message>,
+         ) as WrappedMiddlewareResolver<Message, any, any>,
       )
 
       if (allowDuplicateRequests !== true) {

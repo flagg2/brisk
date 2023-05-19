@@ -1,5 +1,17 @@
 # @flagg2/brisk
 
+## 1.6.0
+
+### Minor Changes
+
+-  remove res
+
+## 1.5.0
+
+### Minor Changes
+
+-  Added upload capabilities, unparsed bodies are now marked unknown instead of any
+
 ## 1.4.4
 
 ### Patch Changes

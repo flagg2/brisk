@@ -1,5 +1,5 @@
 import { NextFunction, Request as ExpressRequest } from "express"
-import { BuiltInMiddlewareResolver, BriskResponse } from "../../types"
+import { WrappedMiddlewareResolver, BriskResponse } from "../../types"
 
 export type RequestIdentity = {
    ip: string
@@ -22,7 +22,7 @@ function shouldAllowRequest(
 
 export function getDuplicateRequestFilterMiddleware<Message>(
    getRequests: () => Set<string>,
-): BuiltInMiddlewareResolver<Message> {
+): WrappedMiddlewareResolver<Message, any, any> {
    return (
       req: ExpressRequest,
       res: BriskResponse<Message>,

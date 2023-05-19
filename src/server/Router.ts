@@ -1,13 +1,13 @@
 import {
    BriskRouteType,
-   BriskResolver,
-   CustomMiddlewareResolver,
-   BuiltInMiddlewareResolver,
+   UnwrappedBriskResolver,
+   UnwrappedMiddlewareResolver,
    AnyError,
    ErrorResolver,
    BriskRequest,
    BriskResponse,
    ExpressRouteType,
+   WrappedMiddlewareResolver,
 } from "./types"
 
 import {
@@ -21,7 +21,6 @@ import { ResponseSender } from "./response/ResponseSender"
 import { RequestOptions, UploadRequestOptions } from "./Brisk"
 import { ZodSchema, ZodTypeDef } from "zod"
 import { pathToRegex, prependSlash } from "./utils/path"
-import { getNotImplementedMiddleware } from "./middlewares/static"
 import { Role } from "./middlewares/dynamic/auth"
 import { addAppResolver, addRouterResolvers } from "./utils/castAndUse"
 import { internalServerError } from "./response/responseContent"
@@ -40,10 +39,7 @@ type RouteResolver<
    KnownRoles extends { [key: string]: Role },
 > = {
    type: BriskRouteType
-   resolver:
-      | BriskResolver<Message, any, any, any, any>
-      | CustomMiddlewareResolver<Message, any, any>
-      | BuiltInMiddlewareResolver<Message>
+   resolver: WrappedMiddlewareResolver<Message, any, any>
    opts?: RequestOptions<ValidationSchema, KnownRoles>
 }
 
@@ -65,7 +61,7 @@ export class Router<
    private responseGenerator: ResponseSender<Message>
    private customCatchers: Map<AnyError, ErrorResolver<Message>> | undefined
    private middlewares: {
-      resolver: CustomMiddlewareResolver<Message, UserTokenSchema, string>
+      resolver: UnwrappedMiddlewareResolver<Message, UserTokenSchema, string>
       path: string
    }[] = []
    private requests = new Set<string>()
@@ -91,7 +87,7 @@ export class Router<
       addAppResolver(this.app, this.getRoutingMiddleware())
 
       for (const { path, resolver } of this.middlewares) {
-         addAppResolver(this.app, resolver)
+         addAppResolver(this.app, this.wrapResolver(resolver), path)
       }
 
       this.app.use("/", this.router)
@@ -109,25 +105,37 @@ export class Router<
             return res.notFound()
          }
 
-         const matchingPath = this.getMostSpecificPath(matchingPaths)
-         if (matchingPath === null) {
+         const mostSpecificPaths = this.getMostSpecificPaths(matchingPaths)
+         if (mostSpecificPaths.length === 0) {
             return res.notFound()
          }
 
-         const routingInfoForPath = this.routingInfo[matchingPath]
-         if (routingInfoForPath === undefined) {
+         const routingInfos = mostSpecificPaths.map(
+            (path) => this.routingInfo[path],
+         )
+
+         if (routingInfos.length === 0) {
             return res.notFound()
          }
 
-         if (
-            !routingInfoForPath.some(
-               (resolver) => resolver.type === req.method.toUpperCase(),
-            )
-         ) {
+         let parameterizedUrl = ""
+         for (const path of mostSpecificPaths) {
+            for (const resolver of this.routingInfo[path]) {
+               if (resolver.type === req.method.toUpperCase()) {
+                  parameterizedUrl = path
+                  break
+               }
+            }
+            if (parameterizedUrl !== "") {
+               break
+            }
+         }
+
+         if (parameterizedUrl === "") {
             return res.methodNotAllowed()
          }
 
-         req.parameterizedUrl = matchingPath
+         req.parameterizedUrl = parameterizedUrl
 
          next()
       }
@@ -140,7 +148,7 @@ export class Router<
    >(config: {
       type: _RouteType
       path: Path
-      resolver?: BriskResolver<
+      resolver: UnwrappedBriskResolver<
          Message,
          ValidationSchema,
          _RouteType,
@@ -163,9 +171,9 @@ export class Router<
 
       path = prependSlash(path) as Path
 
-      const resolverOrNotImplemented = resolver ?? getNotImplementedMiddleware()
+      const wrappedResolver = this.wrapResolver(resolver)
 
-      this.addToPath(path, { type, resolver: resolverOrNotImplemented, opts })
+      this.addToPath(path, { type, resolver: wrappedResolver, opts })
 
       let generatedMiddlewares = this.middlewareGen.getResolverMiddlewares(
          this,
@@ -174,7 +182,7 @@ export class Router<
          validation,
       )
 
-      let finalResolvers = [...generatedMiddlewares, resolverOrNotImplemented]
+      let finalResolvers = [...generatedMiddlewares, wrappedResolver]
       let wrappedResolvers = finalResolvers.map((_resolver) =>
          this.catchErrorsWithin(_resolver),
       )
@@ -189,7 +197,7 @@ export class Router<
 
    public get<ValidationSchema extends ZodSchema<any>, Path extends string>(
       path: Path,
-      resolver?: BriskResolver<
+      resolver: UnwrappedBriskResolver<
          Message,
          ValidationSchema,
          "GET",
@@ -208,7 +216,7 @@ export class Router<
 
    public post<ValidationSchema extends ZodSchema<any>, Path extends string>(
       path: Path,
-      resolver?: BriskResolver<
+      resolver: UnwrappedBriskResolver<
          Message,
          ValidationSchema,
          "POST",
@@ -227,7 +235,7 @@ export class Router<
 
    public put<ValidationSchema extends ZodSchema<any>, Path extends string>(
       path: Path,
-      resolver?: BriskResolver<
+      resolver: UnwrappedBriskResolver<
          Message,
          ValidationSchema,
          "PUT",
@@ -246,7 +254,7 @@ export class Router<
 
    public patch<ValidationSchema extends ZodSchema<any>, Path extends string>(
       path: Path,
-      resolver?: BriskResolver<
+      resolver: UnwrappedBriskResolver<
          Message,
          ValidationSchema,
          "PATCH",
@@ -265,7 +273,7 @@ export class Router<
 
    public delete<ValidationSchema extends ZodSchema<any>, Path extends string>(
       path: Path,
-      resolver?: BriskResolver<
+      resolver: UnwrappedBriskResolver<
          Message,
          ValidationSchema,
          "DELETE",
@@ -284,17 +292,17 @@ export class Router<
 
    public use<Path extends string>(
       path: Path,
-      middleware: CustomMiddlewareResolver<Message, UserTokenSchema, Path>,
+      middleware: UnwrappedMiddlewareResolver<Message, UserTokenSchema, Path>,
    ) {
       this.middlewares.push({
          path: prependSlash(path) as Path,
-         resolver: middleware as CustomMiddlewareResolver<Message, any, any>,
+         resolver: middleware as UnwrappedMiddlewareResolver<Message, any, any>,
       })
    }
 
    public upload<ValidationSchema extends ZodSchema<any>, Path extends string>(
       path: Path,
-      resolver: BriskResolver<
+      resolver: UnwrappedBriskResolver<
          Message,
          ValidationSchema,
          "UPLOAD",
@@ -343,6 +351,28 @@ export class Router<
       return this.requests
    }
 
+   private wrapResolver<
+      UserTokenSchema extends object | undefined,
+      Path extends string,
+   >(
+      resolver:
+         | UnwrappedBriskResolver<Message, any, any, UserTokenSchema, Path>
+         | UnwrappedMiddlewareResolver<Message, UserTokenSchema, Path>,
+   ): WrappedMiddlewareResolver<Message, UserTokenSchema, Path> {
+      return async (
+         req: BriskRequest<any, any, any, any>,
+         res: BriskResponse<Message>,
+         next: NextFunction,
+      ) => {
+         //@ts-ignore
+         const response = await resolver(req, res)
+         if (response !== undefined) {
+            return res.respondWith(response)
+         }
+         return next()
+      }
+   }
+
    private getMatchingPaths(userPath: string): string[] {
       return Object.keys(this.routingInfo).filter((route) =>
          new RegExp(pathToRegex(route)).test(userPath),
@@ -350,25 +380,27 @@ export class Router<
    }
 
    // prefer more slashes but less colons
-   private getMostSpecificPath(matchingPaths: string[]): string | null {
-      if (matchingPaths.length === 0) {
-         return null
-      }
-
-      return matchingPaths.reduce((prev, curr) => {
-         const prevSlashes = prev.split("/").length
-         const currSlashes = curr.split("/").length
-         if (prevSlashes === currSlashes) {
-            return prev.split(":").length < curr.split(":").length ? prev : curr
-         }
-         return prevSlashes > currSlashes ? prev : curr
-      }, ":".repeat(100))
+   private getMostSpecificPaths(matchingPaths: string[]): string[] {
+      return matchingPaths.reduce<string[]>(
+         (prev, curr) => {
+            const prevSlashes = prev[0].split("/").length
+            const currSlashes = curr.split("/").length
+            if (prevSlashes === currSlashes) {
+               const prevColonCount = prev[0].split(":").length
+               const currColonCount = curr.split(":").length
+               if (prevColonCount === currColonCount) {
+                  return [...prev, curr]
+               }
+               return prevColonCount > currColonCount ? prev : [curr]
+            }
+            return prevSlashes > currSlashes ? prev : [curr]
+         },
+         [":".repeat(100)],
+      )
    }
 
    private catchErrorsWithin(
-      resolver:
-         | BuiltInMiddlewareResolver<Message>
-         | BriskResolver<Message, any, any, any, any>,
+      resolver: WrappedMiddlewareResolver<Message, any, any>,
    ) {
       return async (
          //TODO: type this better
@@ -389,11 +421,11 @@ export class Router<
       }
    }
 
-   private addToPath(path: string, type: RouteResolver<Message, any, any>) {
+   private addToPath(path: string, resolver: RouteResolver<Message, any, any>) {
       if (this.routingInfo[path] != null) {
-         this.routingInfo[path].push(type)
+         this.routingInfo[path].push(resolver)
       } else {
-         this.routingInfo[path] = [type]
+         this.routingInfo[path] = [resolver]
       }
    }
 }

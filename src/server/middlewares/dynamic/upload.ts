@@ -1,6 +1,7 @@
 import { BriskNext, BriskRequest } from "dist"
 import multer from "multer"
-import { TemporaryStorage } from "src/server/TemporaryStorage"
+import { TemporaryStorage } from "../../TemporaryStorage"
+import { ok } from "../../response/responseContent"
 import { AnyBriskRequest, AnyBriskResponse } from "src/server/types"
 
 type SingleFileUploadMiddlewareOptions = {
@@ -93,9 +94,9 @@ export const getUploadFileMiddleware = (
 }
 
 export const getUploadMetaResolver = (storage: TemporaryStorage) => {
-   return (req: AnyBriskRequest, res: AnyBriskResponse) => {
+   return async (req: AnyBriskRequest) => {
       const key = storage.set(req.body)
-      return res.ok({
+      return ok({
          data: {
             metaId: key,
          },

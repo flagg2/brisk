@@ -8,7 +8,7 @@ import cors from "cors"
 import helmet from "helmet"
 import { hrtime } from "process"
 import { logRequest } from "../logRequest"
-import { BuiltInMiddlewareResolver, BriskResponse } from "../types"
+import { WrappedMiddlewareResolver, BriskResponse } from "../types"
 import { ResponseSender } from "../response/ResponseSender"
 import {
    ResponseContent,
@@ -33,7 +33,7 @@ function getRequestSizeKB(req: ExpressRequest) {
 
 export function getLogRequestMiddleware<Message>(
    loggingMethods?: ((message: string) => void)[],
-): BuiltInMiddlewareResolver<Message> {
+): WrappedMiddlewareResolver<Message, any, any> {
    return (
       req: ExpressRequest,
       res: BriskResponse<Message>,
@@ -65,39 +65,49 @@ export function getLogRequestMiddleware<Message>(
 
 export function getNotImplementedMiddleware<
    Message,
->(): BuiltInMiddlewareResolver<Message> {
+>(): WrappedMiddlewareResolver<Message, any, any> {
    return (_: ExpressRequest, res: BriskResponse<Message>) => {
       return res.notImplemented()
    }
 }
 
-export function getHelmetMiddleware<
+export function getHelmetMiddleware<Message>(): WrappedMiddlewareResolver<
    Message,
->(): BuiltInMiddlewareResolver<Message> {
+   any,
+   any
+> {
    return helmet()
 }
 
-export function getJsonMiddleware<
+export function getJsonMiddleware<Message>(): WrappedMiddlewareResolver<
    Message,
->(): BuiltInMiddlewareResolver<Message> {
+   any,
+   any
+> {
    return json()
 }
 
-export function getUrlencodedMiddleware<
+export function getUrlencodedMiddleware<Message>(): WrappedMiddlewareResolver<
    Message,
->(): BuiltInMiddlewareResolver<Message> {
+   any,
+   any
+> {
    return urlencoded({ extended: true })
 }
 
-export function getCorsMiddleware<
+export function getCorsMiddleware<Message>(): WrappedMiddlewareResolver<
    Message,
->(): BuiltInMiddlewareResolver<Message> {
+   any,
+   any
+> {
    return cors()
 }
 
-export function getBlankMiddleware<
+export function getBlankMiddleware<Message>(): WrappedMiddlewareResolver<
    Message,
->(): BuiltInMiddlewareResolver<Message> {
+   any,
+   any
+> {
    return (
       _: ExpressRequest,
       res: BriskResponse<Message>,
@@ -107,9 +117,11 @@ export function getBlankMiddleware<
    }
 }
 
-export function getKeepRawBodyMiddleware<
+export function getKeepRawBodyMiddleware<Message>(): WrappedMiddlewareResolver<
    Message,
->(): BuiltInMiddlewareResolver<Message> {
+   any,
+   any
+> {
    return (
       req: ExpressRequest,
       res: BriskResponse<Message>,
@@ -129,7 +141,7 @@ export function getKeepRawBodyMiddleware<
 
 export function getAttachResponseMethodsMiddleware<Message>(
    responseSender: ResponseSender<Message>,
-): BuiltInMiddlewareResolver<Message> {
+): WrappedMiddlewareResolver<Message, any, any> {
    return (
       req: ExpressRequest,
       res: BriskResponse<Message>,

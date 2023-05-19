@@ -1,20 +1,27 @@
 import {
    Application as ExpressAplication,
    Router as ExpressRouter,
+   Request as ExpressRequest,
 } from "express"
 import {
-   BuiltInMiddlewareResolver,
-   CustomMiddlewareResolver,
-   BriskResolver,
+   UnwrappedMiddlewareResolver,
+   UnwrappedBriskResolver,
    BriskRouteType,
+   WrappedMiddlewareResolver,
 } from "../types"
+
+export async function setRequestField(
+   req: ExpressRequest,
+   field: string,
+   value: any,
+) {
+   // @ts-ignore
+   req[field] = value
+}
 
 export async function addAppResolver(
    app: ExpressAplication,
-   resolver:
-      | BuiltInMiddlewareResolver<any>
-      | CustomMiddlewareResolver<any, any, any>
-      | BriskResolver<any, any, any, any, any>,
+   resolver: WrappedMiddlewareResolver<any, any, any>,
    path = "/",
 ) {
    app.use(path, resolver as any)
@@ -24,11 +31,7 @@ export async function addRouterResolvers(
    router: ExpressRouter,
    type: BriskRouteType,
    path: string,
-   resolvers: (
-      | BuiltInMiddlewareResolver<any>
-      | CustomMiddlewareResolver<any, any, any>
-      | BriskResolver<any, any, any, any, any>
-   )[],
+   resolvers: WrappedMiddlewareResolver<any, any, any>[],
 ) {
    // @ts-ignore
    router[type](path, resolvers as any)

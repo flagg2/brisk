@@ -2,11 +2,13 @@ import schema from "@flagg2/schema"
 import { z } from "zod"
 import { Role } from "./server/middlewares/dynamic/auth"
 import { Brisk } from "./server/Brisk"
+import { ok, badRequest } from "./server/response/responseContent"
 
 const test = new Role("test", "test")
 
 const server = new Brisk({
    port: 3000,
+
    authConfig: {
       knownRoles: { test },
       resolverType: "token",
@@ -15,8 +17,7 @@ const server = new Brisk({
       userTokenSchema: schema.object({
          id: schema.string(),
       }),
-      rolesResolver: async () => {
-         await sleep(1000)
+      rolesResolver: async (token) => {
          return []
       },
    },
@@ -24,24 +25,14 @@ const server = new Brisk({
 
 const router = server.getRouter()
 
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+router.get("/test/:slugOrId", async (req) => {
+   console.log(req.parameterizedUrl)
+   return ok()
+})
 
-router.upload(
-   "/upload",
-   async (req, res) => {
-      console.log(req.file)
-      console.log(req.body.alt)
-      return res.ok()
-   },
-   {
-      uploadConfig: {
-         allowedFileExtensions: ["ts"],
-         metadataValidForMs: 100000,
-      },
-      validationSchema: z.object({
-         alt: z.string(),
-      }),
-   },
-)
+router.post("/test/:id", async (req) => {
+   console.log(req.parameterizedUrl)
+   return badRequest()
+})
 
 server.start()
