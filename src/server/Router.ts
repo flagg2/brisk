@@ -101,7 +101,7 @@ export class Router<
          next: NextFunction,
       ) => {
          const matchingPaths = this.getMatchingPaths(req.path)
-         if (matchingPaths === undefined) {
+         if (matchingPaths === undefined || matchingPaths.length === 0) {
             return res.notFound()
          }
 

@@ -1,5 +1,23 @@
 # @flagg2/brisk
 
+## 1.6.3
+
+### Patch Changes
+
+-  change log to warn
+
+## 1.6.2
+
+### Patch Changes
+
+-  log validation errors if debug flag
+
+## 1.6.1
+
+### Patch Changes
+
+-  fix method resolution
+
 ## 1.6.0
 
 ### Minor Changes

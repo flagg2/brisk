@@ -18,6 +18,9 @@ export function getSchemaValidationMiddleware<Message>(
          }
          next()
       } catch (error: any) {
+         if (process.env.DEBUG) {
+            console.warn(error)
+         }
          res.unprocessableEntity({
             data: error,
          })
