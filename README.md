@@ -1,4 +1,4 @@
-# Payment
+# Brisk
 
 A [library](https://www.npmjs.com/package/@flagg2/brisk) built on top of express, which allows for easier development of apis
 
