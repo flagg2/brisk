@@ -1,5 +1,17 @@
 # @flagg2/brisk
 
+## 1.6.6
+
+### Patch Changes
+
+-  sync with npm
+
+## 1.6.4
+
+### Patch Changes
+
+-  fix path matching
+
 ## 1.6.3
 
 ### Patch Changes

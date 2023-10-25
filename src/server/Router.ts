@@ -383,15 +383,15 @@ export class Router<
    private getMostSpecificPaths(matchingPaths: string[]): string[] {
       return matchingPaths.reduce<string[]>(
          (prev, curr) => {
-            const prevSlashes = prev[0].split("/").length
-            const currSlashes = curr.split("/").length
+            const prevSlashes = prev[0].split("/").length - 1
+            const currSlashes = curr.split("/").length - 1
             if (prevSlashes === currSlashes) {
-               const prevColonCount = prev[0].split(":").length
-               const currColonCount = curr.split(":").length
+               const prevColonCount = prev[0].split(":").length - 1
+               const currColonCount = curr.split(":").length - 1
                if (prevColonCount === currColonCount) {
                   return [...prev, curr]
                }
-               return prevColonCount > currColonCount ? prev : [curr]
+               return prevColonCount < currColonCount ? prev : [curr]
             }
             return prevSlashes > currSlashes ? prev : [curr]
          },
